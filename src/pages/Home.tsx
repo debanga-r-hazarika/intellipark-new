@@ -4,36 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ParkingGrid from '@/components/ParkingGrid';
 import ReservationModal, { ReservationData } from '@/components/ReservationModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
-import { SpotStatus } from '@/components/ParkingSpot';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-
-// Mock data for parking complexes
-const parkingComplexes = [
-  'Demo Parking 1',
-  'Demo Parking 2'
-];
-
-// Generate mock parking spots
-const generateParkingSpots = (count: number) => {
-  const spots = [];
-  const statusOptions: SpotStatus[] = ['available', 'occupied', 'reserved'];
-  
-  for (let i = 1; i <= count; i++) {
-    const id = `A${i.toString().padStart(2, '0')}`;
-    // Randomly assign status, but ensure we have some available spots
-    const randomStatus = i % 3 === 0 ? 'available' : statusOptions[Math.floor(Math.random() * statusOptions.length)];
-    spots.push({ id, status: randomStatus });
-  }
-  
-  return spots;
-};
-
-// Mock data for both parking complexes
-const parkingData = {
-  'Demo Parking 1': generateParkingSpots(18),
-  'Demo Parking 2': generateParkingSpots(24)
-};
+import { parkingComplexes, parkingData } from '@/utils/parkingData';
 
 const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [selectedComplex, setSelectedComplex] = useState<string>(parkingComplexes[0]);

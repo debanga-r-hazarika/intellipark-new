@@ -1,11 +1,7 @@
 
 import React from 'react';
-import ParkingSpot, { SpotStatus } from './ParkingSpot';
-
-interface ParkingSpotData {
-  id: string;
-  status: SpotStatus;
-}
+import ParkingSpot from './ParkingSpot';
+import { ParkingSpotData } from '@/utils/parkingData';
 
 interface ParkingGridProps {
   spots: ParkingSpotData[];
