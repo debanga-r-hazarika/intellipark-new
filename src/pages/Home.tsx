@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +9,7 @@ import { toast } from 'sonner';
 import { parkingComplexes, parkingData } from '@/utils/parkingData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Car, Clock, CreditCard, Shield, Star, Users } from 'lucide-react';
+import { Car, Clock, Star, Users } from 'lucide-react';
 
 const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [selectedComplex, setSelectedComplex] = useState<string>(parkingComplexes[0]);
@@ -66,16 +65,6 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       icon: <Clock className="h-10 w-10 text-primary" />,
       title: "Real-time Availability",
       description: "See parking availability updated in real-time to save you time and frustration."
-    },
-    {
-      icon: <CreditCard className="h-10 w-10 text-primary" />,
-      title: "Secure Payments",
-      description: "Enjoy hassle-free, secure payment options for your reservations."
-    },
-    {
-      icon: <Shield className="h-10 w-10 text-primary" />,
-      title: "Guaranteed Spots",
-      description: "Your reserved spot is guaranteed to be available when you arrive."
     }
   ];
 
