@@ -1,7 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
@@ -22,26 +21,24 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <BrowserRouter>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-          <Routes>
-            <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
-            <Route path="/login" element={
-              isLoggedIn ? <Navigate to="/" /> : <Login setIsLoggedIn={setIsLoggedIn} />
-            } />
-            <Route path="/register" element={
-              isLoggedIn ? <Navigate to="/" /> : <Register />
-            } />
-            <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />} />
-            <Route path="/reserve" element={<Reserve isLoggedIn={isLoggedIn} />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+        <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+        <Routes>
+          <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
+          <Route path="/login" element={
+            isLoggedIn ? <Navigate to="/" /> : <Login setIsLoggedIn={setIsLoggedIn} />
+          } />
+          <Route path="/register" element={
+            isLoggedIn ? <Navigate to="/" /> : <Register />
+          } />
+          <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />} />
+          <Route path="/reserve" element={<Reserve isLoggedIn={isLoggedIn} />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
