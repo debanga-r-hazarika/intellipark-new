@@ -8,8 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { parkingComplexes, parkingData } from '@/utils/parkingData';
 import { Card, CardContent } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Car, Clock, Star, Users } from 'lucide-react';
+import { Car, Clock, Users, AlertTriangle, FileCode } from 'lucide-react';
 
 const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [selectedComplex, setSelectedComplex] = useState<string>(parkingComplexes[0]);
@@ -66,40 +65,6 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       title: "Real-time Availability",
       description: "See parking availability updated in real-time to save you time and frustration."
     }
-  ];
-
-  const testimonials = [
-    {
-      name: "Alex Johnson",
-      role: "Daily Commuter",
-      comment: "This app has transformed my daily commute. No more circling blocks looking for parking!",
-      rating: 5
-    },
-    {
-      name: "Sarah Williams",
-      role: "Business Traveler",
-      comment: "As someone who travels for business, having guaranteed parking is invaluable. This service delivers exactly that.",
-      rating: 5
-    },
-    {
-      name: "Michael Chen",
-      role: "City Resident",
-      comment: "Living downtown, parking was always a nightmare until I found this app. Now I can always find a spot near home.",
-      rating: 4
-    },
-    {
-      name: "Jessica Miller",
-      role: "Event Planner",
-      comment: "I recommend this to all my event attendees. It makes parking one less thing to worry about when planning events.",
-      rating: 5
-    }
-  ];
-  
-  const stats = [
-    { value: "50,000+", label: "Active Users" },
-    { value: "200+", label: "Parking Locations" },
-    { value: "99.9%", label: "Reservation Accuracy" },
-    { value: "24/7", label: "Customer Support" }
   ];
   
   return (
@@ -164,63 +129,55 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
         </div>
       </section>
       
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 to-accent/5">
+      {/* Prototype Information Section - Replacing Testimonials */}
+      <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold mb-4">What Our Users Say</h2>
-            <p className="text-xl text-muted-foreground">Join thousands of satisfied users who've simplified their parking experience.</p>
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 mb-4">
+              <AlertTriangle className="w-4 h-4 mr-1" /> Prototype Version
+            </span>
+            <h2 className="text-3xl font-bold mb-4">Prototype Phase</h2>
+            <p className="text-xl text-muted-foreground">
+              This is a prototype version of the parking reservation system. Features and data are simulated for demonstration purposes.
+            </p>
           </div>
           
-          <div className="max-w-5xl mx-auto">
-            <Carousel
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent>
-                {testimonials.map((testimonial, index) => (
-                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                    <div className="p-1">
-                      <Card className="border-0 shadow-lg card-glassmorphism">
-                        <CardContent className="p-6 flex flex-col h-full">
-                          <div className="flex mb-4">
-                            {[...Array(testimonial.rating)].map((_, i) => (
-                              <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                            ))}
-                          </div>
-                          <p className="text-lg mb-4 flex-grow">{testimonial.comment}</p>
-                          <div>
-                            <p className="font-semibold">{testimonial.name}</p>
-                            <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <div className="flex items-center justify-center mt-8">
-                <CarouselPrevious className="relative static left-0 translate-y-0 mr-2" />
-                <CarouselNext className="relative static right-0 translate-y-0 ml-2" />
-              </div>
-            </Carousel>
-          </div>
-        </div>
-      </section>
-      
-      {/* Statistics Section */}
-      <section className="py-20 bg-gradient-to-br from-accent to-primary text-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {stats.map((stat, index) => (
-              <div key={index} className="p-6">
-                <div className="text-4xl font-bold mb-2">{stat.value}</div>
-                <div className="text-lg opacity-90">{stat.label}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="border-2 border-dashed border-primary/30">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <div className="bg-primary/10 p-4 rounded-full mb-4">
+                  <FileCode className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium mb-2">API Integration</h3>
+                <p className="text-muted-foreground">
+                  Backend API endpoints will connect here to provide real parking data.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-dashed border-primary/30">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <div className="bg-primary/10 p-4 rounded-full mb-4">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium mb-2">User Authentication</h3>
+                <p className="text-muted-foreground">
+                  Authentication system will be integrated to manage real user accounts.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-dashed border-primary/30">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <div className="bg-primary/10 p-4 rounded-full mb-4">
+                  <Car className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium mb-2">Data Simulation</h3>
+                <p className="text-muted-foreground">
+                  Parking availability and reservations are currently simulated with mock data.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
