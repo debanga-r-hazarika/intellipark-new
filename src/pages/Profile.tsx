@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { EyeIcon, EyeOffIcon, KeyIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ProfileProps {
   isLoggedIn: boolean;
@@ -35,6 +38,19 @@ const userData = {
 const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
   const navigate = useNavigate();
   
+  // Form state
+  const [name, setName] = useState(userData.name);
+  const [email, setEmail] = useState(userData.email);
+  const [vehiclePlate, setVehiclePlate] = useState(userData.vehiclePlate);
+  
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  
   // Redirect if not logged in
   useEffect(() => {
     if (!isLoggedIn) {
@@ -47,6 +63,35 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
     setIsLoggedIn(false);
     toast.success('Successfully logged out!');
     navigate('/');
+  };
+  
+  const handleUpdateDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Here you would typically make an API call to update user details
+    toast.success('Your details have been updated successfully!');
+  };
+  
+  const handlePasswordChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    
+    // Simple validation
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords don't match");
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      return;
+    }
+    
+    // Here you would typically make an API call to change password
+    toast.success('Your password has been changed successfully!');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
   };
   
   if (!isLoggedIn) return null; // Don't render if not logged in
@@ -64,24 +109,136 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
               <CardDescription>Manage your account information</CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleUpdateDetails}>
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input id="name" defaultValue={userData.name} />
+                  <Input 
+                    id="name" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue={userData.email} />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="vehiclePlate">Vehicle Plate Number</Label>
-                  <Input id="vehiclePlate" defaultValue={userData.vehiclePlate} />
+                  <Input 
+                    id="vehiclePlate" 
+                    value={vehiclePlate}
+                    onChange={(e) => setVehiclePlate(e.target.value)}
+                  />
                 </div>
                 
                 <div className="pt-4 space-y-2">
-                  <Button className="w-full">Update Details</Button>
+                  <Button className="w-full" type="submit">
+                    Update Details
+                  </Button>
+                  
+                  {/* Password Change Dialog */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full gap-2">
+                        <KeyIcon className="h-4 w-4" />
+                        Change Password
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Change Your Password</DialogTitle>
+                        <DialogDescription>
+                          Enter your current password and set a new one.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={handlePasswordChange} className="space-y-4">
+                        {passwordError && (
+                          <Alert variant="destructive">
+                            <AlertDescription>{passwordError}</AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPassword">Current Password</Label>
+                          <div className="relative">
+                            <Input
+                              id="currentPassword"
+                              type={showCurrentPassword ? "text" : "password"}
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              required
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            >
+                              {showCurrentPassword ? (
+                                <EyeOffIcon className="h-4 w-4" />
+                              ) : (
+                                <EyeIcon className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword">New Password</Label>
+                          <div className="relative">
+                            <Input
+                              id="newPassword"
+                              type={showNewPassword ? "text" : "password"}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              required
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                              {showNewPassword ? (
+                                <EyeOffIcon className="h-4 w-4" />
+                              ) : (
+                                <EyeIcon className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                        
+                        <DialogFooter className="mt-4">
+                          <DialogClose asChild>
+                            <Button variant="outline" type="button">Cancel</Button>
+                          </DialogClose>
+                          <Button type="submit">Change Password</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                  
                   <Button 
                     variant="outline" 
                     className="w-full mt-2"
