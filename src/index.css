@@ -23,7 +23,7 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 196 100% 50%;
+    --accent: 210 100% 60%;
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 60%;
@@ -64,7 +64,7 @@
     --muted: 217 33% 18%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 196 100% 42%;
+    --accent: 210 100% 60%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
@@ -101,7 +101,7 @@
   }
   
   .nav-glassmorphism {
-    @apply bg-white/70 dark:bg-black/70 backdrop-blur-md border-b border-white/20 dark:border-white/10;
+    @apply bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-white/20 dark:border-white/10;
   }
   
   .card-glassmorphism {
@@ -110,7 +110,7 @@
   
   /* Grid Pattern Background */
   .bg-grid-pattern {
-    background-size: 30px 30px;
+    background-size: 40px 40px;
     background-image: 
       linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
@@ -139,5 +139,123 @@
   /* Button animations */
   .btn-hover-glow {
     @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(6,182,212,0.6)];
+  }
+}
+
+/* Enhanced animations for a more professional look */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fade-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expand {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  .animate-fade-slide-up {
+    animation: fade-slide-up 0.5s ease-out forwards;
+  }
+  
+  .animate-expand {
+    animation: expand 0.4s ease-out forwards;
+  }
+  
+  /* Professional blue gradient */
+  .bg-professional-gradient {
+    @apply bg-gradient-to-r from-blue-600 to-primary;
+  }
+  
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+  
+  /* Interactive buttons */
+  .btn-interactive {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+  
+  .btn-interactive::after {
+    @apply content-[''] absolute inset-0 bg-gradient-to-r from-blue-600 to-primary opacity-0 transition-opacity duration-300 ease-out;
+  }
+  
+  .btn-interactive:hover::after {
+    @apply opacity-100;
+  }
+  
+  .btn-interactive span {
+    @apply relative z-10;
+  }
+  
+  /* Enterprise color sections */
+  .bg-enterprise-light {
+    @apply bg-slate-50 dark:bg-slate-900;
+  }
+  
+  .bg-enterprise-dark {
+    @apply bg-slate-100 dark:bg-slate-800;
   }
 }
