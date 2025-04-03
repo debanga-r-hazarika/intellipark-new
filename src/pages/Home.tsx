@@ -117,7 +117,7 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
             <p className="text-xl text-muted-foreground">Our intelligent parking system takes the stress out of finding and securing parking spots.</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {features.map((feature, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg hover-lift transition-all duration-300">
                 <div className="mb-4">{feature.icon}</div>
@@ -129,7 +129,7 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
         </div>
       </section>
       
-      {/* Prototype Information Section - Replacing Testimonials */}
+      {/* Prototype Information Section */}
       <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-10">
