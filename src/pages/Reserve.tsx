@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -87,7 +86,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     
     // Create the reservation in our mock data system
     const newReservation = addReservation({
-      userId: data.userId,
+      userId: data.userId || '',
       parkingComplex: data.parkingComplex,
       spotId: data.spotId,
       vehiclePlate: data.vehiclePlate,
@@ -97,16 +96,13 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       status: status as 'upcoming' | 'live' | 'past'
     });
     
-    // Update the spot status in the parking data
-    updateParkingSpotStatus(data.parkingComplex, data.spotId, 'reserved');
-    
     // Update local state to reflect the change
     if (selectedComplex) {
-      const updatedSpots = [...parkingData[selectedComplex as keyof typeof parkingData]];
-      setParkingSpots(updatedSpots);
+      // Refresh the parking spots data to show the updated status
+      setParkingSpots([...parkingData[selectedComplex as keyof typeof parkingData]]);
     }
     
-    // Store the formatted reservation for display
+    // Store the formatted reservation for display in confirmation modal
     const displayReservation = {
       id: newReservation.id,
       spotId: data.spotId,

@@ -63,7 +63,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           
           <div className="bg-primary/10 p-4 rounded-lg text-center mt-4">
             <p className="text-sm">Your booking reference number:</p>
-            <p className="font-mono font-bold tracking-wider">{generateBookingReference()}</p>
+            <p className="font-mono font-bold tracking-wider">{reservation.id || generateBookingReference()}</p>
           </div>
         </div>
         

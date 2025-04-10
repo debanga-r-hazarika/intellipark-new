@@ -102,6 +102,10 @@ export const addReservation = (reservation: Omit<ReservationData, 'id' | 'create
   };
   
   mockReservations.push(newReservation);
+  
+  // Update the parking spot status to reserved
+  updateParkingSpotStatus(reservation.parkingComplex, reservation.spotId, 'reserved');
+  
   return newReservation;
 };
 
@@ -155,7 +159,12 @@ export const getPastReservations = (userId: string): ReservationData[] => {
 
 // Function to update the mock parking data when a reservation is made
 export const updateParkingSpotStatus = (parkingComplex: string, spotId: string, newStatus: SpotStatus): void => {
-  const complexSpots = parkingData[parkingComplex as keyof typeof parkingData];
+  if (!parkingComplex || !spotId) return;
+  
+  const complexKey = parkingComplex as keyof typeof parkingData;
+  if (!parkingData[complexKey]) return;
+  
+  const complexSpots = parkingData[complexKey];
   const spotIndex = complexSpots.findIndex(spot => spot.id === spotId);
   
   if (spotIndex !== -1) {
