@@ -54,6 +54,7 @@ const Register: React.FC = () => {
         options: {
           data: {
             name: formData.name,
+            vehicle_plate: formData.vehiclePlate,
           },
         },
       });
@@ -64,28 +65,16 @@ const Register: React.FC = () => {
         return;
       }
       
-      // Update the user's profile with additional info
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            name: formData.name,
-            vehicle_plate: formData.vehiclePlate
-          })
-          .eq('id', data.user.id);
-        
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
-          // Continue anyway as the user has been created
-        }
-        
-        toast.success('Registration successful! You can now log in.');
-        
-        // Navigate to login page after 2 seconds
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      }
+      // Note: We don't need to update the profiles table manually anymore
+      // as we've set up a trigger in Supabase that handles this automatically
+      // when a new user is created
+      
+      toast.success('Registration successful! You can now log in.');
+      
+      // Navigate to login page after 2 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
       console.error('Registration error:', error);
       toast.error('An unexpected error occurred');
