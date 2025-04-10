@@ -3,7 +3,16 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { format } from 'date-fns';
-import { ReservationData } from './ReservationModal';
+
+interface ReservationData {
+  id: string;
+  spotId: string;
+  parkingComplex: string;
+  vehiclePlate: string;
+  date: Date; // Changed to Date type to match what's passed from Reserve.tsx
+  time: string;
+  duration: string;
+}
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -44,6 +53,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             
             <div className="font-semibold">Date:</div>
             <div>{format(reservation.date, 'PPP')}</div>
+            
+            <div className="font-semibold">Time:</div>
+            <div>{reservation.time}</div>
             
             <div className="font-semibold">Duration:</div>
             <div>{reservation.duration}</div>

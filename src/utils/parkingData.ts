@@ -106,14 +106,50 @@ export const addReservation = (reservation: Omit<ReservationData, 'id' | 'create
 };
 
 export const getUpcomingReservations = (userId: string): ReservationData[] => {
+  // Update status dynamically based on current date
+  const today = new Date().toISOString().split('T')[0];
+  mockReservations.forEach(res => {
+    if (res.date > today) {
+      res.status = 'upcoming';
+    } else if (res.date === today) {
+      res.status = 'live';
+    } else {
+      res.status = 'past';
+    }
+  });
+  
   return mockReservations.filter(res => res.userId === userId && res.status === 'upcoming');
 };
 
 export const getLiveReservations = (userId: string): ReservationData[] => {
+  // Update status dynamically based on current date
+  const today = new Date().toISOString().split('T')[0];
+  mockReservations.forEach(res => {
+    if (res.date > today) {
+      res.status = 'upcoming';
+    } else if (res.date === today) {
+      res.status = 'live';
+    } else {
+      res.status = 'past';
+    }
+  });
+  
   return mockReservations.filter(res => res.userId === userId && res.status === 'live');
 };
 
 export const getPastReservations = (userId: string): ReservationData[] => {
+  // Update status dynamically based on current date
+  const today = new Date().toISOString().split('T')[0];
+  mockReservations.forEach(res => {
+    if (res.date > today) {
+      res.status = 'upcoming';
+    } else if (res.date === today) {
+      res.status = 'live';
+    } else {
+      res.status = 'past';
+    }
+  });
+  
   return mockReservations.filter(res => res.userId === userId && res.status === 'past');
 };
 

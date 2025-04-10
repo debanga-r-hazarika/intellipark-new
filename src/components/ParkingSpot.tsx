@@ -22,7 +22,7 @@ const getStatusInfo = (status: SpotStatus) => {
     case 'occupied':
       return { color: 'bg-parking-occupied', text: 'Occupied', tooltip: 'Already booked', isClickable: false };
     case 'reserved':
-      return { color: 'bg-parking-reserved', text: 'Reserved', tooltip: 'Reserved', isClickable: false };
+      return { color: 'bg-blue-500', text: 'Reserved', tooltip: 'Reserved', isClickable: false };
     default:
       return { color: 'bg-gray-300', text: 'Unknown', tooltip: 'Status unknown', isClickable: false };
   }

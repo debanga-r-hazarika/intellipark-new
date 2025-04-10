@@ -21,6 +21,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState<boolean>(false);
   const [reservation, setReservation] = useState<any | null>(null);
   const [userVehiclePlate, setUserVehiclePlate] = useState<string>('');
+  const [parkingSpots, setParkingSpots] = useState<any[]>([]);
   
   const navigate = useNavigate();
   
@@ -50,6 +51,12 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     fetchUserProfile();
   }, [isLoggedIn]);
   
+  useEffect(() => {
+    if (selectedComplex) {
+      setParkingSpots([...parkingData[selectedComplex as keyof typeof parkingData]]);
+    }
+  }, [selectedComplex]);
+  
   const handleComplexSelect = (value: string) => {
     setSelectedComplex(value);
   };
@@ -69,7 +76,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     setIsReservationModalOpen(true);
   };
   
-  const handleReservationConfirm = (data: ReservationData) => {
+  const handleReservationConfirm = async (data: ReservationData) => {
     // Format the reservation data
     const formattedDate = data.date.toISOString().split('T')[0];
     
@@ -93,13 +100,19 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     // Update the spot status in the parking data
     updateParkingSpotStatus(data.parkingComplex, data.spotId, 'reserved');
     
+    // Update local state to reflect the change
+    if (selectedComplex) {
+      const updatedSpots = [...parkingData[selectedComplex as keyof typeof parkingData]];
+      setParkingSpots(updatedSpots);
+    }
+    
     // Store the formatted reservation for display
     const displayReservation = {
       id: newReservation.id,
       spotId: data.spotId,
       parkingComplex: data.parkingComplex,
       vehiclePlate: data.vehiclePlate,
-      date: formattedDate,
+      date: data.date, // Pass the Date object to the confirmation modal
       time: data.time,
       duration: data.duration
     };
@@ -145,7 +158,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
               <div className="animate-fade-in">
                 <h3 className="text-lg font-medium mb-4">Select an Available Parking Spot</h3>
                 <ParkingGrid 
-                  spots={parkingData[selectedComplex as keyof typeof parkingData]} 
+                  spots={parkingSpots} 
                   onSpotClick={handleSpotClick} 
                 />
               </div>
