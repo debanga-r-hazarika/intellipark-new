@@ -50,7 +50,11 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   };
   
   const handleReservationConfirm = (data: ReservationData) => {
-    setReservation(data);
+    // Ensure we have an id for the reservation data
+    setReservation({
+      ...data,
+      id: `R${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}` // Generate a random id if not provided
+    });
     setIsReservationModalOpen(false);
     setIsConfirmationModalOpen(true);
   };

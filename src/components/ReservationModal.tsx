@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,13 +21,14 @@ interface ReservationModalProps {
 }
 
 export interface ReservationData {
+  id?: string; // Make id optional to match how it's used in Home.tsx
   spotId: string;
   parkingComplex: string;
   vehiclePlate: string;
   date: Date;
   time: string;
   duration: string;
-  userId: string;
+  userId?: string; // Make userId optional for flexibility
 }
 
 const durations = [

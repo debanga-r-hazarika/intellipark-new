@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { format } from 'date-fns';
 
 interface ReservationData {
-  id: string;
+  id?: string; // Make id optional to match the data from ReservationModal
   spotId: string;
   parkingComplex: string;
   vehiclePlate: string;
