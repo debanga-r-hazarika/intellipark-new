@@ -10,6 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -25,7 +26,9 @@ export interface ReservationData {
   parkingComplex: string;
   vehiclePlate: string;
   date: Date;
+  time: string;
   duration: string;
+  userId: string;
 }
 
 const durations = [
@@ -35,6 +38,11 @@ const durations = [
   '4 hours',
   '8 hours',
   'All day'
+];
+
+const timeSlots = [
+  '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
 ];
 
 const ReservationModal: React.FC<ReservationModalProps> = ({
@@ -50,10 +58,12 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     parkingComplex,
     vehiclePlate,
     date: new Date(),
-    duration: '1 hour'
+    time: '12:00',
+    duration: '1 hour',
+    userId: ''
   });
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.vehiclePlate) {
@@ -62,7 +72,12 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     }
     
     if (!formData.date) {
-      toast.error('Please select a date and time');
+      toast.error('Please select a date');
+      return;
+    }
+    
+    if (!formData.time) {
+      toast.error('Please select a time');
       return;
     }
     
@@ -71,7 +86,26 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       return;
     }
     
-    onConfirm(formData as ReservationData);
+    try {
+      // Get the current user from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You need to be logged in to make a reservation');
+        return;
+      }
+      
+      // Add the user ID to the form data
+      const completeData = {
+        ...formData,
+        userId: user.id
+      } as ReservationData;
+      
+      onConfirm(completeData);
+    } catch (error) {
+      toast.error('Failed to process your reservation');
+      console.error('Reservation error:', error);
+    }
   };
   
   return (
@@ -116,7 +150,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label>Date & Time</Label>
+            <Label>Date</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -141,6 +175,25 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
                 />
               </PopoverContent>
             </Popover>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Time</Label>
+            <Select
+              value={formData.time}
+              onValueChange={(val) => setFormData({ ...formData, time: val })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select time" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeSlots.map((time) => (
+                  <SelectItem key={time} value={time}>
+                    {time}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">

@@ -1,20 +1,54 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
 import ReservationModal, { ReservationData } from '@/components/ReservationModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { parkingComplexes, parkingData } from '@/utils/parkingData';
+import { 
+  parkingComplexes, 
+  parkingData, 
+  updateParkingSpotStatus, 
+  addReservation 
+} from '@/utils/parkingData';
+import { supabase } from '@/integrations/supabase/client';
 
 const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [selectedComplex, setSelectedComplex] = useState<string | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<string | null>(null);
   const [isReservationModalOpen, setIsReservationModalOpen] = useState<boolean>(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState<boolean>(false);
-  const [reservation, setReservation] = useState<ReservationData | null>(null);
+  const [reservation, setReservation] = useState<any | null>(null);
+  const [userVehiclePlate, setUserVehiclePlate] = useState<string>('');
   
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Fetch user profile to get their vehicle plate number
+    const fetchUserProfile = async () => {
+      if (isLoggedIn) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('vehicle_plate')
+              .eq('id', user.id)
+              .single();
+              
+            if (profile && profile.vehicle_plate) {
+              setUserVehiclePlate(profile.vehicle_plate);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [isLoggedIn]);
   
   const handleComplexSelect = (value: string) => {
     setSelectedComplex(value);
@@ -36,9 +70,50 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   };
   
   const handleReservationConfirm = (data: ReservationData) => {
-    setReservation(data);
+    // Format the reservation data
+    const formattedDate = data.date.toISOString().split('T')[0];
+    
+    // Determine status (upcoming, live, past)
+    const today = new Date().toISOString().split('T')[0];
+    const status = formattedDate > today ? 'upcoming' : 
+                  formattedDate === today ? 'live' : 'past';
+    
+    // Create the reservation in our mock data system
+    const newReservation = addReservation({
+      userId: data.userId,
+      parkingComplex: data.parkingComplex,
+      spotId: data.spotId,
+      vehiclePlate: data.vehiclePlate,
+      date: formattedDate,
+      time: data.time,
+      duration: data.duration,
+      status: status as 'upcoming' | 'live' | 'past'
+    });
+    
+    // Update the spot status in the parking data
+    updateParkingSpotStatus(data.parkingComplex, data.spotId, 'reserved');
+    
+    // Store the formatted reservation for display
+    const displayReservation = {
+      id: newReservation.id,
+      spotId: data.spotId,
+      parkingComplex: data.parkingComplex,
+      vehiclePlate: data.vehiclePlate,
+      date: formattedDate,
+      time: data.time,
+      duration: data.duration
+    };
+    
+    setReservation(displayReservation);
     setIsReservationModalOpen(false);
     setIsConfirmationModalOpen(true);
+  };
+  
+  const handleConfirmationClose = () => {
+    setIsConfirmationModalOpen(false);
+    toast.success('Your reservation has been confirmed!', {
+      description: 'You can view all your reservations in your profile.'
+    });
   };
   
   return (
@@ -105,13 +180,14 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
           spotId={selectedSpot || ''}
           parkingComplex={selectedComplex}
           onConfirm={handleReservationConfirm}
+          vehiclePlate={userVehiclePlate}
         />
       )}
       
       {/* Confirmation Modal */}
       <ConfirmationModal 
         isOpen={isConfirmationModalOpen}
-        onClose={() => setIsConfirmationModalOpen(false)}
+        onClose={handleConfirmationClose}
         reservation={reservation}
       />
     </div>

@@ -10,38 +10,30 @@ import { toast } from 'sonner';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { EyeIcon, EyeOffIcon, KeyIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  getUpcomingReservations, 
+  getLiveReservations, 
+  getPastReservations 
+} from '@/utils/parkingData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileProps {
   isLoggedIn: boolean;
   setIsLoggedIn: (value: boolean) => void;
 }
 
-// Mock user data
-const userData = {
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  vehiclePlate: 'ABC123',
-  reservations: {
-    past: [
-      { id: 'P001', complex: 'Demo Parking 1', spot: 'A03', date: '2023-10-15', duration: '2 hours' },
-      { id: 'P002', complex: 'Demo Parking 2', spot: 'A08', date: '2023-10-10', duration: '1 hour' },
-    ],
-    upcoming: [
-      { id: 'U001', complex: 'Demo Parking 1', spot: 'A12', date: '2023-11-20', duration: '4 hours' },
-    ],
-    live: [
-      { id: 'L001', complex: 'Demo Parking 2', spot: 'A05', date: '2023-11-01', duration: '1 hour', remainingTime: '35 min' },
-    ]
-  }
-};
-
 const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
   const navigate = useNavigate();
   
   // Form state
-  const [name, setName] = useState(userData.name);
-  const [email, setEmail] = useState(userData.email);
-  const [vehiclePlate, setVehiclePlate] = useState(userData.vehiclePlate);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  
+  // Reservations state
+  const [upcomingReservations, setUpcomingReservations] = useState<any[]>([]);
+  const [liveReservations, setLiveReservations] = useState<any[]>([]);
+  const [pastReservations, setPastReservations] = useState<any[]>([]);
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -51,28 +43,86 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   
-  // Redirect if not logged in
+  // Fetch user data on component mount
   useEffect(() => {
     if (!isLoggedIn) {
       toast.error('You need to log in first!');
       navigate('/login');
+      return;
     }
+    
+    const fetchUserData = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Fetch user profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile) {
+            setName(profile.name || '');
+            setEmail(user.email || '');
+            setVehiclePlate(profile.vehicle_plate || '');
+            
+            // Fetch reservations
+            setUpcomingReservations(getUpcomingReservations(user.id));
+            setLiveReservations(getLiveReservations(user.id));
+            setPastReservations(getPastReservations(user.id));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to load user data');
+      }
+    };
+    
+    fetchUserData();
   }, [isLoggedIn, navigate]);
   
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    toast.success('Successfully logged out!');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setIsLoggedIn(false);
+      toast.success('Successfully logged out!');
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to log out');
+    }
   };
   
-  const handleUpdateDetails = (e: React.FormEvent) => {
+  const handleUpdateDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Here you would typically make an API call to update user details
-    toast.success('Your details have been updated successfully!');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Update profile in database
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            name,
+            vehicle_plate: vehiclePlate
+          })
+          .eq('id', user.id);
+        
+        if (error) throw error;
+        
+        toast.success('Your details have been updated successfully!');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Failed to update your details');
+    }
   };
   
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
     
@@ -87,11 +137,21 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
       return;
     }
     
-    // Here you would typically make an API call to change password
-    toast.success('Your password has been changed successfully!');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Your password has been changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Password change error:', error);
+      setPasswordError('Failed to change password');
+    }
   };
   
   if (!isLoggedIn) return null; // Don't render if not logged in
@@ -125,7 +185,8 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
                     id="email" 
                     type="email" 
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    readOnly
+                    className="bg-muted"
                   />
                 </div>
                 
@@ -266,8 +327,8 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
                 </TabsList>
                 
                 <TabsContent value="upcoming" className="space-y-4 pt-4">
-                  {userData.reservations.upcoming.length > 0 ? (
-                    userData.reservations.upcoming.map((reservation) => (
+                  {upcomingReservations.length > 0 ? (
+                    upcomingReservations.map((reservation) => (
                       <ReservationCard 
                         key={reservation.id}
                         reservation={reservation}
@@ -280,8 +341,8 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
                 </TabsContent>
                 
                 <TabsContent value="live" className="space-y-4 pt-4">
-                  {userData.reservations.live.length > 0 ? (
-                    userData.reservations.live.map((reservation) => (
+                  {liveReservations.length > 0 ? (
+                    liveReservations.map((reservation) => (
                       <ReservationCard 
                         key={reservation.id}
                         reservation={reservation}
@@ -294,8 +355,8 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
                 </TabsContent>
                 
                 <TabsContent value="past" className="space-y-4 pt-4">
-                  {userData.reservations.past.length > 0 ? (
-                    userData.reservations.past.map((reservation) => (
+                  {pastReservations.length > 0 ? (
+                    pastReservations.map((reservation) => (
                       <ReservationCard 
                         key={reservation.id}
                         reservation={reservation}
@@ -331,7 +392,7 @@ const EmptyState = ({ message }: { message: string }) => (
 
 // Reservation card component
 interface ReservationCardProps {
-  reservation: any; // Using 'any' for simplicity
+  reservation: any;
   type: 'upcoming' | 'live' | 'past';
 }
 
@@ -349,23 +410,34 @@ const ReservationCard: React.FC<ReservationCardProps> = ({ reservation, type }) 
     }
   };
   
+  const formatRemainingTime = () => {
+    if (type !== 'live') return null;
+    
+    // For demo purposes, just return a static value
+    // In a real app, we'd calculate the actual remaining time
+    const minutes = Math.floor(Math.random() * 60) + 1;
+    return `${minutes} min`;
+  };
+  
   return (
     <div className="p-4 border rounded-lg hover-lift">
       <div className="flex justify-between items-start">
         <div>
           <div className="flex gap-2 items-center mb-2">
-            <h3 className="font-semibold">{reservation.complex}</h3>
+            <h3 className="font-semibold">{reservation.parkingComplex}</h3>
             <span className={`text-xs px-2 py-1 rounded-full ${getBadgeColor()}`}>
               {type === 'upcoming' ? 'Upcoming' : type === 'live' ? 'Active' : 'Past'}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mb-1">Spot: <span className="font-medium">{reservation.spot}</span></p>
-          <p className="text-sm text-muted-foreground mb-1">Date: {reservation.date}</p>
-          <p className="text-sm text-muted-foreground">Duration: {reservation.duration}</p>
+          <p className="text-sm text-muted-foreground mb-1">Spot: <span className="font-medium">{reservation.spotId}</span></p>
+          <p className="text-sm text-muted-foreground mb-1">Vehicle: <span className="font-medium">{reservation.vehiclePlate}</span></p>
+          <p className="text-sm text-muted-foreground mb-1">Date: <span className="font-medium">{reservation.date}</span></p>
+          <p className="text-sm text-muted-foreground mb-1">Time: <span className="font-medium">{reservation.time}</span></p>
+          <p className="text-sm text-muted-foreground">Duration: <span className="font-medium">{reservation.duration}</span></p>
           
-          {type === 'live' && reservation.remainingTime && (
+          {type === 'live' && (
             <p className="text-sm font-medium mt-2 text-primary">
-              Remaining time: {reservation.remainingTime}
+              Remaining time: {formatRemainingTime()}
             </p>
           )}
         </div>
