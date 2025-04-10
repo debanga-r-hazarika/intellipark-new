@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavbarProps {
   isLoggedIn: boolean;
@@ -36,9 +36,22 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, setIsLoggedIn }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    toast.success("Successfully logged out!");
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        toast.error(error.message || 'Error logging out');
+        console.error('Logout error:', error);
+        return;
+      }
+      
+      setIsLoggedIn(false);
+      toast.success("Successfully logged out!");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('An unexpected error occurred');
+    }
   };
   
   const handleProfileClick = () => {

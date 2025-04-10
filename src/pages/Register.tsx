@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const Register: React.FC = () => {
     vehiclePlate: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,7 +25,7 @@ const Register: React.FC = () => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -37,13 +39,59 @@ const Register: React.FC = () => {
       return;
     }
     
-    // For demonstration purposes, just show success message
-    toast.success('Registration successful! Redirecting to login...');
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
     
-    // Navigate to login page after 2 seconds
-    setTimeout(() => {
-      navigate('/login');
-    }, 2000);
+    setIsLoading(true);
+    
+    try {
+      // Register with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+          },
+        },
+      });
+      
+      if (error) {
+        toast.error(error.message || 'Error registering account');
+        console.error('Registration error:', error);
+        return;
+      }
+      
+      // Update the user's profile with additional info
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            name: formData.name,
+            vehicle_plate: formData.vehiclePlate
+          })
+          .eq('id', data.user.id);
+        
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+          // Continue anyway as the user has been created
+        }
+        
+        toast.success('Registration successful! You can now log in.');
+        
+        // Navigate to login page after 2 seconds
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -65,6 +113,7 @@ const Register: React.FC = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -77,6 +126,7 @@ const Register: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -98,6 +148,7 @@ const Register: React.FC = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -110,6 +161,7 @@ const Register: React.FC = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -121,11 +173,12 @@ const Register: React.FC = () => {
                 value={formData.vehiclePlate}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
               />
             </div>
             
-            <Button type="submit" className="w-full btn-hover-glow">
-              Register
+            <Button type="submit" className="w-full btn-hover-glow" disabled={isLoading}>
+              {isLoading ? 'Registering...' : 'Register'}
             </Button>
           </form>
         </CardContent>

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginProps {
   setIsLoggedIn: (value: boolean) => void;
@@ -15,9 +16,10 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -25,10 +27,31 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
       return;
     }
     
-    // For demonstration purposes, accept any email/password
-    setIsLoggedIn(true);
-    toast.success('Login successful!');
-    navigate('/');
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        toast.error(error.message || 'Error logging in');
+        console.error('Login error:', error);
+        return;
+      }
+      
+      if (data.user) {
+        setIsLoggedIn(true);
+        toast.success('Login successful!');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -51,6 +74,7 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -71,10 +95,11 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full btn-hover-glow">
-              Login
+            <Button type="submit" className="w-full btn-hover-glow" disabled={isLoading}>
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
         </CardContent>
