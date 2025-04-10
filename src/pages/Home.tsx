@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -96,14 +97,16 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                   </span>
                   <span className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                 </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  onClick={handleRegisterClick}
-                  className="text-lg border-2 hover-lift"
-                >
-                  <Users className="mr-2 h-5 w-5" /> Register Now
-                </Button>
+                {!isLoggedIn && (
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    onClick={handleRegisterClick}
+                    className="text-lg border-2 hover-lift"
+                  >
+                    <Users className="mr-2 h-5 w-5" /> Register Now
+                  </Button>
+                )}
               </div>
             </div>
             <div className="hidden lg:block relative">
