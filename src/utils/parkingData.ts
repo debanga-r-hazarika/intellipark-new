@@ -89,6 +89,23 @@ let mockReservations: ReservationData[] = [
   }
 ];
 
+// Function to update the mock parking data when a reservation is made
+// MOVED THIS FUNCTION BEFORE IT'S USED IN initializeSpotStatus
+export const updateParkingSpotStatus = (parkingComplex: string, spotId: string, newStatus: SpotStatus): void => {
+  if (!parkingComplex || !spotId) return;
+  
+  const complexKey = parkingComplex as keyof typeof parkingData;
+  if (!parkingData[complexKey]) return;
+  
+  const complexSpots = parkingData[complexKey];
+  const spotIndex = complexSpots.findIndex(spot => spot.id === spotId);
+  
+  if (spotIndex !== -1) {
+    complexSpots[spotIndex].status = newStatus;
+    console.log(`Updated spot ${spotId} in ${parkingComplex} to ${newStatus}`);
+  }
+};
+
 // Initialize parking spot status based on existing reservations
 const initializeSpotStatus = () => {
   // Mark spots as reserved based on active and upcoming reservations
@@ -168,22 +185,6 @@ export const getPastReservations = (userId: string): ReservationData[] => {
   });
   
   return mockReservations.filter(res => res.userId === userId && res.status === 'past');
-};
-
-// Function to update the mock parking data when a reservation is made
-export const updateParkingSpotStatus = (parkingComplex: string, spotId: string, newStatus: SpotStatus): void => {
-  if (!parkingComplex || !spotId) return;
-  
-  const complexKey = parkingComplex as keyof typeof parkingData;
-  if (!parkingData[complexKey]) return;
-  
-  const complexSpots = parkingData[complexKey];
-  const spotIndex = complexSpots.findIndex(spot => spot.id === spotId);
-  
-  if (spotIndex !== -1) {
-    complexSpots[spotIndex].status = newStatus;
-    console.log(`Updated spot ${spotId} in ${parkingComplex} to ${newStatus}`);
-  }
 };
 
 // Function to get all parking spots with their current status
