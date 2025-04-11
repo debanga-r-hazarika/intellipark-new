@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -81,11 +80,6 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     // Format the reservation data
     const formattedDate = data.date.toISOString().split('T')[0];
     
-    // Determine status (upcoming, live, past)
-    const today = new Date().toISOString().split('T')[0];
-    const status = formattedDate > today ? 'upcoming' : 
-                  formattedDate === today ? 'live' : 'past';
-    
     // Create the reservation in our mock data system
     const newReservation = addReservation({
       userId: data.userId || '',
@@ -95,7 +89,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       date: formattedDate,
       time: data.time,
       duration: data.duration,
-      status: status as 'upcoming' | 'live' | 'past'
+      status: 'live' // Since we're only allowing today's reservations, it's live
     });
     
     // Update local state to reflect the change

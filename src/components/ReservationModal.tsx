@@ -1,13 +1,11 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,12 +35,14 @@ const durations = [
   '2 hours',
   '4 hours',
   '8 hours',
-  'All day'
+  '24 hours' // Changed from 'All day' to '24 hours'
 ];
 
+// Create time slots in 12-hour format
 const timeSlots = [
-  '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
+  '12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM', '6:00 AM', '7:00 AM', 
+  '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', 
+  '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
 ];
 
 const ReservationModal: React.FC<ReservationModalProps> = ({
@@ -53,12 +53,15 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   onConfirm,
   vehiclePlate = ''
 }) => {
+  // Set current date as fixed date
+  const today = new Date();
+  
   const [formData, setFormData] = useState<Partial<ReservationData>>({
     spotId,
     parkingComplex,
     vehiclePlate,
-    date: new Date(),
-    time: '12:00',
+    date: today,
+    time: '12:00 PM', // Default to noon
     duration: '1 hour',
     userId: ''
   });
@@ -68,11 +71,6 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     
     if (!formData.vehiclePlate) {
       toast.error('Please enter your vehicle plate number');
-      return;
-    }
-    
-    if (!formData.date) {
-      toast.error('Please select a date');
       return;
     }
     
@@ -98,6 +96,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       // Add the user ID to the form data
       const completeData = {
         ...formData,
+        date: today, // Always use today's date
         userId: user.id
       } as ReservationData;
       
@@ -151,30 +150,11 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
           
           <div className="space-y-2">
             <Label>Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.date && "text-muted-foreground"
-                  )}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
-                  {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.date}
-                  onSelect={(date) => setFormData({ ...formData, date: date || new Date() })}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <Input
+              value={format(today, "PPP")}
+              readOnly
+              className="bg-muted"
+            />
           </div>
           
           <div className="space-y-2">

@@ -57,8 +57,8 @@ let mockReservations: ReservationData[] = [
     parkingComplex: 'Demo Parking 1',
     spotId: 'A12',
     vehiclePlate: 'ABC123',
-    date: '2025-04-20',
-    time: '14:00',
+    date: '2025-04-11', // Current date for demo purpose
+    time: '2:00 PM',
     duration: '2 hours',
     status: 'upcoming',
     createdAt: '2025-04-10T10:30:00Z'
@@ -69,8 +69,8 @@ let mockReservations: ReservationData[] = [
     parkingComplex: 'Demo Parking 2',
     spotId: 'A05',
     vehiclePlate: 'ABC123',
-    date: '2025-04-10',
-    time: '09:00',
+    date: '2025-04-11', // Current date for demo purpose
+    time: '9:00 AM',
     duration: '1 hour',
     status: 'live',
     createdAt: '2025-04-09T22:15:00Z'
@@ -81,8 +81,8 @@ let mockReservations: ReservationData[] = [
     parkingComplex: 'Demo Parking 1',
     spotId: 'A03',
     vehiclePlate: 'ABC123',
-    date: '2025-03-15',
-    time: '16:30',
+    date: '2025-04-10', // Past date for demo purpose
+    time: '4:30 PM',
     duration: '4 hours',
     status: 'past',
     createdAt: '2025-03-14T12:00:00Z'
@@ -139,14 +139,41 @@ export const addReservation = (reservation: Omit<ReservationData, 'id' | 'create
   return newReservation;
 };
 
+// Helper to determine if a time is AM or PM
+const isTimeAM = (time: string): boolean => {
+  return time.includes('AM');
+};
+
+// Helper to get hour from time string
+const getHourFromTime = (time: string): number => {
+  const hourStr = time.split(':')[0];
+  let hour = parseInt(hourStr);
+  
+  // Convert 12-hour to 24-hour for comparison
+  if (time.includes('PM') && hour < 12) {
+    hour += 12;
+  } else if (time.includes('AM') && hour === 12) {
+    hour = 0;
+  }
+  
+  return hour;
+};
+
 export const getUpcomingReservations = (userId: string): ReservationData[] => {
-  // Update status dynamically based on current date
+  // Update status dynamically based on current date and time
   const today = new Date().toISOString().split('T')[0];
+  const currentHour = new Date().getHours();
+  
   mockReservations.forEach(res => {
     if (res.date > today) {
       res.status = 'upcoming';
     } else if (res.date === today) {
-      res.status = 'live';
+      const reservationHour = getHourFromTime(res.time);
+      if (reservationHour > currentHour) {
+        res.status = 'upcoming';
+      } else {
+        res.status = 'live';
+      }
     } else {
       res.status = 'past';
     }
@@ -156,13 +183,25 @@ export const getUpcomingReservations = (userId: string): ReservationData[] => {
 };
 
 export const getLiveReservations = (userId: string): ReservationData[] => {
-  // Update status dynamically based on current date
+  // Update status dynamically based on current date and time
   const today = new Date().toISOString().split('T')[0];
+  const currentHour = new Date().getHours();
+  
   mockReservations.forEach(res => {
-    if (res.date > today) {
+    if (res.date === today) {
+      const reservationHour = getHourFromTime(res.time);
+      // Check if reservation time is current
+      if (reservationHour <= currentHour && 
+          (reservationHour + parseInt(res.duration.split(' ')[0]) > currentHour || 
+           res.duration === '24 hours')) {
+        res.status = 'live';
+      } else if (reservationHour > currentHour) {
+        res.status = 'upcoming';
+      } else {
+        res.status = 'past';
+      }
+    } else if (res.date > today) {
       res.status = 'upcoming';
-    } else if (res.date === today) {
-      res.status = 'live';
     } else {
       res.status = 'past';
     }
@@ -172,15 +211,20 @@ export const getLiveReservations = (userId: string): ReservationData[] => {
 };
 
 export const getPastReservations = (userId: string): ReservationData[] => {
-  // Update status dynamically based on current date
+  // Update status dynamically based on current date and time
   const today = new Date().toISOString().split('T')[0];
+  const currentHour = new Date().getHours();
+  
   mockReservations.forEach(res => {
-    if (res.date > today) {
-      res.status = 'upcoming';
-    } else if (res.date === today) {
-      res.status = 'live';
-    } else {
+    if (res.date < today) {
       res.status = 'past';
+    } else if (res.date === today) {
+      const reservationHour = getHourFromTime(res.time);
+      const durationHours = parseInt(res.duration.split(' ')[0]);
+      
+      if (reservationHour + durationHours <= currentHour && res.duration !== '24 hours') {
+        res.status = 'past';
+      }
     }
   });
   
