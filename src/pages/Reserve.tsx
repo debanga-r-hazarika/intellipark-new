@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -52,6 +53,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   
   useEffect(() => {
     if (selectedComplex) {
+      // Create a fresh copy of the parking data to ensure we have the latest status
       setParkingSpots([...parkingData[selectedComplex as keyof typeof parkingData]]);
     }
   }, [selectedComplex]);
@@ -98,7 +100,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     
     // Update local state to reflect the change
     if (selectedComplex) {
-      // Refresh the parking spots data to show the updated status
+      // Force refresh the parking spots data to show the updated status
       setParkingSpots([...parkingData[selectedComplex as keyof typeof parkingData]]);
     }
     

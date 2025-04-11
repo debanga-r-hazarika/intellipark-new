@@ -89,6 +89,19 @@ let mockReservations: ReservationData[] = [
   }
 ];
 
+// Initialize parking spot status based on existing reservations
+const initializeSpotStatus = () => {
+  // Mark spots as reserved based on active and upcoming reservations
+  mockReservations.forEach(reservation => {
+    if (reservation.status === 'upcoming' || reservation.status === 'live') {
+      updateParkingSpotStatus(reservation.parkingComplex, reservation.spotId, 'reserved');
+    }
+  });
+};
+
+// Call initialization when the module loads
+initializeSpotStatus();
+
 // Reservation service functions
 export const getReservationsByUserId = (userId: string): ReservationData[] => {
   return mockReservations.filter(res => res.userId === userId);
@@ -169,5 +182,11 @@ export const updateParkingSpotStatus = (parkingComplex: string, spotId: string, 
   
   if (spotIndex !== -1) {
     complexSpots[spotIndex].status = newStatus;
+    console.log(`Updated spot ${spotId} in ${parkingComplex} to ${newStatus}`);
   }
+};
+
+// Function to get all parking spots with their current status
+export const getAllParkingSpots = () => {
+  return parkingData;
 };
