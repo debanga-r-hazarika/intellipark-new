@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -7,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   parkingComplexes, 
-  parkingData, 
+  fetchParkingSpots,
   updateParkingSpotStatus, 
   addReservation 
 } from '@/utils/parkingData';
@@ -21,6 +22,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [reservation, setReservation] = useState<any | null>(null);
   const [userVehiclePlate, setUserVehiclePlate] = useState<string>('');
   const [parkingSpots, setParkingSpots] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const navigate = useNavigate();
   
@@ -52,8 +54,21 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   
   useEffect(() => {
     if (selectedComplex) {
-      // Create a fresh copy of the parking data to ensure we have the latest status
-      setParkingSpots([...parkingData[selectedComplex as keyof typeof parkingData]]);
+      // Fetch parking spots data from Supabase
+      const loadParkingSpots = async () => {
+        setIsLoading(true);
+        try {
+          const spots = await fetchParkingSpots(selectedComplex);
+          setParkingSpots(spots);
+        } catch (error) {
+          console.error('Error loading parking spots:', error);
+          toast.error('Failed to load parking spots');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      loadParkingSpots();
     }
   }, [selectedComplex]);
   
@@ -80,8 +95,8 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     // Format the reservation data
     const formattedDate = data.date.toISOString().split('T')[0];
     
-    // Create the reservation in our mock data system
-    const newReservation = addReservation({
+    // Create the reservation in Supabase
+    const newReservation = await addReservation({
       userId: data.userId || '',
       parkingComplex: data.parkingComplex,
       spotId: data.spotId,
@@ -92,26 +107,29 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       status: 'live' // Since we're only allowing today's reservations, it's live
     });
     
-    // Update local state to reflect the change
-    if (selectedComplex) {
-      // Force refresh the parking spots data to show the updated status
-      setParkingSpots([...parkingData[selectedComplex as keyof typeof parkingData]]);
+    if (newReservation) {
+      // Update local state to reflect the change
+      if (selectedComplex) {
+        // Fetch the latest parking spots data
+        const spots = await fetchParkingSpots(selectedComplex);
+        setParkingSpots(spots);
+      }
+      
+      // Store the formatted reservation for display in confirmation modal
+      const displayReservation = {
+        id: newReservation.id,
+        spotId: data.spotId,
+        parkingComplex: data.parkingComplex,
+        vehiclePlate: data.vehiclePlate,
+        date: data.date, // Pass the Date object to the confirmation modal
+        time: data.time,
+        duration: data.duration
+      };
+      
+      setReservation(displayReservation);
+      setIsReservationModalOpen(false);
+      setIsConfirmationModalOpen(true);
     }
-    
-    // Store the formatted reservation for display in confirmation modal
-    const displayReservation = {
-      id: newReservation.id,
-      spotId: data.spotId,
-      parkingComplex: data.parkingComplex,
-      vehiclePlate: data.vehiclePlate,
-      date: data.date, // Pass the Date object to the confirmation modal
-      time: data.time,
-      duration: data.duration
-    };
-    
-    setReservation(displayReservation);
-    setIsReservationModalOpen(false);
-    setIsConfirmationModalOpen(true);
   };
   
   const handleConfirmationClose = () => {
@@ -149,10 +167,16 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
             {selectedComplex && (
               <div className="animate-fade-in">
                 <h3 className="text-lg font-medium mb-4">Select an Available Parking Spot</h3>
-                <ParkingGrid 
-                  spots={parkingSpots} 
-                  onSpotClick={handleSpotClick} 
-                />
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <ParkingGrid 
+                    spots={parkingSpots} 
+                    onSpotClick={handleSpotClick} 
+                  />
+                )}
               </div>
             )}
             

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,6 +33,7 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
   const [upcomingReservations, setUpcomingReservations] = useState<any[]>([]);
   const [liveReservations, setLiveReservations] = useState<any[]>([]);
   const [pastReservations, setPastReservations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -52,6 +52,7 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
     }
     
     const fetchUserData = async () => {
+      setIsLoading(true);
       try {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
@@ -69,15 +70,21 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
             setEmail(user.email || '');
             setVehiclePlate(profile.vehicle_plate || '');
             
-            // Fetch reservations
-            setUpcomingReservations(getUpcomingReservations(user.id));
-            setLiveReservations(getLiveReservations(user.id));
-            setPastReservations(getPastReservations(user.id));
+            // Fetch reservations from Supabase
+            const upcoming = await getUpcomingReservations(user.id);
+            const live = await getLiveReservations(user.id);
+            const past = await getPastReservations(user.id);
+            
+            setUpcomingReservations(upcoming);
+            setLiveReservations(live);
+            setPastReservations(past);
           }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
         toast.error('Failed to load user data');
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -161,216 +168,222 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
       <div className="container mx-auto max-w-6xl">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <Card className="md:col-span-1 animate-fade-in card-glassmorphism">
-            <CardHeader>
-              <CardTitle>Personal Details</CardTitle>
-              <CardDescription>Manage your account information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handleUpdateDetails}>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input 
-                    id="name" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={email}
-                    readOnly
-                    className="bg-muted"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="vehiclePlate">Vehicle Plate Number</Label>
-                  <Input 
-                    id="vehiclePlate" 
-                    value={vehiclePlate}
-                    onChange={(e) => setVehiclePlate(e.target.value)}
-                  />
-                </div>
-                
-                <div className="pt-4 space-y-2">
-                  <Button className="w-full" type="submit">
-                    Update Details
-                  </Button>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Profile Card */}
+            <Card className="md:col-span-1 animate-fade-in card-glassmorphism">
+              <CardHeader>
+                <CardTitle>Personal Details</CardTitle>
+                <CardDescription>Manage your account information</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-4" onSubmit={handleUpdateDetails}>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input 
+                      id="name" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
                   
-                  {/* Password Change Dialog */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full gap-2">
-                        <KeyIcon className="h-4 w-4" />
-                        Change Password
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Change Your Password</DialogTitle>
-                        <DialogDescription>
-                          Enter your current password and set a new one.
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <form onSubmit={handlePasswordChange} className="space-y-4">
-                        {passwordError && (
-                          <Alert variant="destructive">
-                            <AlertDescription>{passwordError}</AlertDescription>
-                          </Alert>
-                        )}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={email}
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="vehiclePlate">Vehicle Plate Number</Label>
+                    <Input 
+                      id="vehiclePlate" 
+                      value={vehiclePlate}
+                      onChange={(e) => setVehiclePlate(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="pt-4 space-y-2">
+                    <Button className="w-full" type="submit">
+                      Update Details
+                    </Button>
+                    
+                    {/* Password Change Dialog */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full gap-2">
+                          <KeyIcon className="h-4 w-4" />
+                          Change Password
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Change Your Password</DialogTitle>
+                          <DialogDescription>
+                            Enter your current password and set a new one.
+                          </DialogDescription>
+                        </DialogHeader>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="currentPassword">Current Password</Label>
-                          <div className="relative">
+                        <form onSubmit={handlePasswordChange} className="space-y-4">
+                          {passwordError && (
+                            <Alert variant="destructive">
+                              <AlertDescription>{passwordError}</AlertDescription>
+                            </Alert>
+                          )}
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="currentPassword">Current Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="currentPassword"
+                                type={showCurrentPassword ? "text" : "password"}
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                required
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                              >
+                                {showCurrentPassword ? (
+                                  <EyeOffIcon className="h-4 w-4" />
+                                ) : (
+                                  <EyeIcon className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="newPassword">New Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="newPassword"
+                                type={showNewPassword ? "text" : "password"}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                              >
+                                {showNewPassword ? (
+                                  <EyeOffIcon className="h-4 w-4" />
+                                ) : (
+                                  <EyeIcon className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
                             <Input
-                              id="currentPassword"
-                              type={showCurrentPassword ? "text" : "password"}
-                              value={currentPassword}
-                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              id="confirmPassword"
+                              type="password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
                               required
                             />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-0 top-0"
-                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            >
-                              {showCurrentPassword ? (
-                                <EyeOffIcon className="h-4 w-4" />
-                              ) : (
-                                <EyeIcon className="h-4 w-4" />
-                              )}
-                            </Button>
                           </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="newPassword">New Password</Label>
-                          <div className="relative">
-                            <Input
-                              id="newPassword"
-                              type={showNewPassword ? "text" : "password"}
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              required
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-0 top-0"
-                              onClick={() => setShowNewPassword(!showNewPassword)}
-                            >
-                              {showNewPassword ? (
-                                <EyeOffIcon className="h-4 w-4" />
-                              ) : (
-                                <EyeIcon className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                          <Input
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                          />
-                        </div>
-                        
-                        <DialogFooter className="mt-4">
-                          <DialogClose asChild>
-                            <Button variant="outline" type="button">Cancel</Button>
-                          </DialogClose>
-                          <Button type="submit">Change Password</Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                          
+                          <DialogFooter className="mt-4">
+                            <DialogClose asChild>
+                              <Button variant="outline" type="button">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit">Change Password</Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-2"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+            
+            {/* Reservations Tab */}
+            <Card className="md:col-span-2 animate-fade-in card-glassmorphism">
+              <CardHeader>
+                <CardTitle>My Reservations</CardTitle>
+                <CardDescription>View and manage your parking reservations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="upcoming" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                    <TabsTrigger value="live">Live</TabsTrigger>
+                    <TabsTrigger value="past">Past</TabsTrigger>
+                  </TabsList>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-2"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-          
-          {/* Reservations Tab */}
-          <Card className="md:col-span-2 animate-fade-in card-glassmorphism">
-            <CardHeader>
-              <CardTitle>My Reservations</CardTitle>
-              <CardDescription>View and manage your parking reservations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="upcoming" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                  <TabsTrigger value="live">Live</TabsTrigger>
-                  <TabsTrigger value="past">Past</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="upcoming" className="space-y-4 pt-4">
-                  {upcomingReservations.length > 0 ? (
-                    upcomingReservations.map((reservation) => (
-                      <ReservationCard 
-                        key={reservation.id}
-                        reservation={reservation}
-                        type="upcoming"
-                      />
-                    ))
-                  ) : (
-                    <EmptyState message="No upcoming reservations" />
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="live" className="space-y-4 pt-4">
-                  {liveReservations.length > 0 ? (
-                    liveReservations.map((reservation) => (
-                      <ReservationCard 
-                        key={reservation.id}
-                        reservation={reservation}
-                        type="live"
-                      />
-                    ))
-                  ) : (
-                    <EmptyState message="No active reservations" />
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="past" className="space-y-4 pt-4">
-                  {pastReservations.length > 0 ? (
-                    pastReservations.map((reservation) => (
-                      <ReservationCard 
-                        key={reservation.id}
-                        reservation={reservation}
-                        type="past"
-                      />
-                    ))
-                  ) : (
-                    <EmptyState message="No past reservations" />
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+                  <TabsContent value="upcoming" className="space-y-4 pt-4">
+                    {upcomingReservations.length > 0 ? (
+                      upcomingReservations.map((reservation) => (
+                        <ReservationCard 
+                          key={reservation.id}
+                          reservation={reservation}
+                          type="upcoming"
+                        />
+                      ))
+                    ) : (
+                      <EmptyState message="No upcoming reservations" />
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="live" className="space-y-4 pt-4">
+                    {liveReservations.length > 0 ? (
+                      liveReservations.map((reservation) => (
+                        <ReservationCard 
+                          key={reservation.id}
+                          reservation={reservation}
+                          type="live"
+                        />
+                      ))
+                    ) : (
+                      <EmptyState message="No active reservations" />
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="past" className="space-y-4 pt-4">
+                    {pastReservations.length > 0 ? (
+                      pastReservations.map((reservation) => (
+                        <ReservationCard 
+                          key={reservation.id}
+                          reservation={reservation}
+                          type="past"
+                        />
+                      ))
+                    ) : (
+                      <EmptyState message="No past reservations" />
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -410,13 +423,63 @@ const ReservationCard: React.FC<ReservationCardProps> = ({ reservation, type }) 
     }
   };
   
-  const formatRemainingTime = () => {
+  const calculateRemainingTime = () => {
     if (type !== 'live') return null;
     
-    // For demo purposes, just return a static value
-    // In a real app, we'd calculate the actual remaining time
-    const minutes = Math.floor(Math.random() * 60) + 1;
-    return `${minutes} min`;
+    const today = new Date();
+    const reservationTime = reservation.time;
+    const durationStr = reservation.duration;
+    
+    // Extract duration value in hours
+    let durationHours = 1;
+    if (durationStr === '24 hours') {
+      durationHours = 24;
+    } else {
+      const durationMatch = durationStr.match(/(\d+)/);
+      if (durationMatch && durationMatch[1]) {
+        durationHours = parseInt(durationMatch[1]);
+        // Convert minutes to hours if needed
+        if (durationStr.includes('min')) {
+          durationHours = durationHours / 60;
+        }
+      }
+    }
+    
+    // Parse reservation time
+    const timeMatch = reservationTime.match(/(\d+):(\d+)\s+(AM|PM)/i);
+    if (!timeMatch) return "Unknown";
+    
+    let hour = parseInt(timeMatch[1]);
+    const minutes = parseInt(timeMatch[2]);
+    const ampm = timeMatch[3].toUpperCase();
+    
+    // Convert to 24-hour format
+    if (ampm === 'PM' && hour < 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+    
+    // Calculate end time
+    const endTime = new Date(today);
+    endTime.setHours(hour);
+    endTime.setMinutes(minutes);
+    endTime.setSeconds(0);
+    endTime.setMilliseconds(0);
+    endTime.setTime(endTime.getTime() + (durationHours * 60 * 60 * 1000));
+    
+    // If end time is past, return "Expired"
+    if (endTime <= today) return "Expired";
+    
+    // Calculate difference in milliseconds
+    const diffMs = endTime.getTime() - today.getTime();
+    
+    // Convert to hours and minutes
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffHours > 0) {
+      return `${diffHours}h ${diffMinutes}m`;
+    } else {
+      return `${diffMinutes}m`;
+    }
   };
   
   return (
@@ -437,7 +500,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({ reservation, type }) 
           
           {type === 'live' && (
             <p className="text-sm font-medium mt-2 text-primary">
-              Remaining time: {formatRemainingTime()}
+              Remaining time: {calculateRemainingTime()}
             </p>
           )}
         </div>

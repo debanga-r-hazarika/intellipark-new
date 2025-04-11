@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -7,7 +6,7 @@ import ReservationModal, { ReservationData } from '@/components/ReservationModal
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { parkingComplexes, parkingData } from '@/utils/parkingData';
+import { parkingComplexes, fetchParkingSpots, addReservation } from '@/utils/parkingData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Car, Clock, Users, AlertTriangle, FileCode, MapPin, Calendar, ShieldCheck } from 'lucide-react';
 
@@ -18,8 +17,30 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState<boolean>(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState<boolean>(false);
   const [reservation, setReservation] = useState<ReservationData | null>(null);
+  const [parkingSpots, setParkingSpots] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (showParkingGrid && selectedComplex) {
+      // Fetch parking spots from Supabase when grid is shown
+      const loadParkingSpots = async () => {
+        setIsLoading(true);
+        try {
+          const spots = await fetchParkingSpots(selectedComplex);
+          setParkingSpots(spots);
+        } catch (error) {
+          console.error('Error loading parking spots:', error);
+          toast.error('Failed to load parking spots');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      loadParkingSpots();
+    }
+  }, [showParkingGrid, selectedComplex]);
   
   const handleComplexSelect = (value: string) => {
     setSelectedComplex(value);
@@ -49,14 +70,42 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     setIsReservationModalOpen(true);
   };
   
-  const handleReservationConfirm = (data: ReservationData) => {
-    // Ensure we have an id for the reservation data
-    setReservation({
-      ...data,
-      id: `R${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}` // Generate a random id if not provided
+  const handleReservationConfirm = async (data: ReservationData) => {
+    // Format the reservation data
+    const formattedDate = data.date.toISOString().split('T')[0];
+    
+    // Create the reservation in Supabase
+    const newReservation = await addReservation({
+      userId: data.userId || '',
+      parkingComplex: data.parkingComplex,
+      spotId: data.spotId,
+      vehiclePlate: data.vehiclePlate,
+      date: formattedDate,
+      time: data.time,
+      duration: data.duration,
+      status: 'live' // Since we're only allowing today's reservations, it's live
     });
-    setIsReservationModalOpen(false);
-    setIsConfirmationModalOpen(true);
+    
+    if (newReservation) {
+      // Refresh the parking grid with updated data
+      const spots = await fetchParkingSpots(selectedComplex);
+      setParkingSpots(spots);
+      
+      // Store the formatted reservation for display in confirmation modal
+      const displayReservation = {
+        id: newReservation.id,
+        spotId: data.spotId,
+        parkingComplex: data.parkingComplex,
+        vehiclePlate: data.vehiclePlate,
+        date: data.date, // Pass the Date object to the confirmation modal
+        time: data.time,
+        duration: data.duration
+      };
+      
+      setReservation(displayReservation);
+      setIsReservationModalOpen(false);
+      setIsConfirmationModalOpen(true);
+    }
   };
   
   const features = [
@@ -256,10 +305,16 @@ const Home: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                 
                 {showParkingGrid && (
                   <div className="animate-fade-in border rounded-xl overflow-hidden p-4 bg-white dark:bg-gray-800">
-                    <ParkingGrid 
-                      spots={parkingData[selectedComplex as keyof typeof parkingData]} 
-                      onSpotClick={handleSpotClick} 
-                    />
+                    {isLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (
+                      <ParkingGrid 
+                        spots={parkingSpots} 
+                        onSpotClick={handleSpotClick} 
+                      />
+                    )}
                   </div>
                 )}
               </CardContent>
