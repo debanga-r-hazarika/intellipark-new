@@ -492,7 +492,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({ reservation, type }) 
               {type === 'upcoming' ? 'Upcoming' : type === 'live' ? 'Active' : 'Past'}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mb-1">Spot: <span className="font-medium">{reservation.spotId}</span></p>
+          <p className="text-sm text-muted-foreground mb-1">Spot: <span className="font-medium">{reservation.spotId || 'N/A'}</span></p>
           <p className="text-sm text-muted-foreground mb-1">Vehicle: <span className="font-medium">{reservation.vehiclePlate}</span></p>
           <p className="text-sm text-muted-foreground mb-1">Date: <span className="font-medium">{reservation.date}</span></p>
           <p className="text-sm text-muted-foreground mb-1">Time: <span className="font-medium">{reservation.time}</span></p>
