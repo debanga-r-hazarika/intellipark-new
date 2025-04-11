@@ -1,4 +1,3 @@
-
 import { SpotStatus } from '@/components/ParkingSpot';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -108,7 +107,7 @@ export const getReservationsByUserId = async (userId: string): Promise<Reservati
     
     if (error) throw error;
     
-    // Transform to our interface
+    // Transform to our interface - This is where the error is happening
     return data.map(res => ({
       id: res.id,
       userId: res.user_id,
@@ -118,7 +117,7 @@ export const getReservationsByUserId = async (userId: string): Promise<Reservati
       date: res.date,
       time: res.time,
       duration: res.duration,
-      status: res.status as 'upcoming' | 'live' | 'past',
+      status: res.status as 'upcoming' | 'live' | 'past', // Fix: Add type assertion
       createdAt: res.created_at
     }));
   } catch (error) {
@@ -161,7 +160,7 @@ export const addReservation = async (reservation: Omit<ReservationData, 'id' | '
       date: data.date,
       time: data.time,
       duration: data.duration,
-      status: data.status,
+      status: data.status as 'upcoming' | 'live' | 'past', // Fix: Add type assertion
       createdAt: data.created_at
     };
   } catch (error) {
