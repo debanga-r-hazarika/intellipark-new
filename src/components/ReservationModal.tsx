@@ -100,6 +100,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
         userId: user.id
       } as ReservationData;
       
+      console.log('Submitting reservation with data:', completeData);
       onConfirm(completeData);
     } catch (error) {
       toast.error('Failed to process your reservation');

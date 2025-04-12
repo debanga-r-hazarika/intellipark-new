@@ -33,18 +33,27 @@ let parkingSpotsCache: {
 
 // Function to update the parking spot status in Supabase
 export const updateParkingSpotStatus = async (parkingComplex: string, spotId: string, newStatus: SpotStatus): Promise<void> => {
-  if (!parkingComplex || !spotId) return;
+  if (!parkingComplex || !spotId) {
+    console.error('Missing required parameters:', { parkingComplex, spotId, newStatus });
+    return;
+  }
   
   try {
     console.log(`Updating spot ${spotId} in ${parkingComplex} to ${newStatus}`);
     
-    // Update in database
-    const { error } = await supabase
+    // Update in database - fix the match condition to use exact column names
+    const { data, error } = await supabase
       .from('parking_spots')
       .update({ status: newStatus })
-      .match({ parking_complex: parkingComplex, spot_id: spotId });
+      .eq('parking_complex', parkingComplex)
+      .eq('spot_id', spotId);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw error;
+    }
+    
+    console.log('Update response from Supabase:', data);
     
     // Update local cache
     if (parkingSpotsCache[parkingComplex]) {
@@ -132,6 +141,7 @@ export const getReservationsByUserId = async (userId: string): Promise<Reservati
   }
 };
 
+// Function to add a reservation and update spot status
 export const addReservation = async (reservation: Omit<ReservationData, 'id' | 'createdAt'>): Promise<ReservationData | null> => {
   try {
     console.log('Adding reservation with data:', reservation);
@@ -152,12 +162,18 @@ export const addReservation = async (reservation: Omit<ReservationData, 'id' | '
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating reservation:', error);
+      throw error;
+    }
     
     console.log('Reservation added successfully. Now updating spot status...');
     
     // Update the parking spot status to reserved
     await updateParkingSpotStatus(reservation.parkingComplex, reservation.spotId, 'reserved');
+    
+    // Invalidate the cache for this parking complex to force a fresh fetch next time
+    delete parkingSpotsCache[reservation.parkingComplex];
     
     // Transform to our interface
     return {

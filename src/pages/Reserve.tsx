@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -105,18 +106,32 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       date: formattedDate,
       time: data.time,
       duration: data.duration,
-      status: 'live' // Since we're only allowing today's reservations, it's live
+      status: 'upcoming' // Changed from 'live' to 'upcoming' for consistency
     });
     
     if (newReservation) {
       console.log('Reservation created successfully:', newReservation.id);
       
+      // Update the spot status directly as a fallback
+      try {
+        console.log('Ensuring spot status is updated to reserved');
+        await updateParkingSpotStatus(data.parkingComplex, data.spotId, 'reserved');
+      } catch (error) {
+        console.error('Failed to update spot status directly:', error);
+      }
+      
       // Update local state to reflect the change
       if (selectedComplex) {
         console.log('Refreshing parking spots data after reservation');
-        // Fetch the latest parking spots data
-        const spots = await fetchParkingSpots(selectedComplex);
-        setParkingSpots(spots);
+        // Force fresh fetch by clearing cache and re-fetching
+        try {
+          // Fetch the latest parking spots data
+          const spots = await fetchParkingSpots(selectedComplex);
+          console.log('Updated spots from database:', spots);
+          setParkingSpots(spots);
+        } catch (error) {
+          console.error('Error refreshing spots:', error);
+        }
       }
       
       // Store the formatted reservation for display in confirmation modal
