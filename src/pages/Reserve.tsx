@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -95,6 +94,8 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     // Format the reservation data
     const formattedDate = data.date.toISOString().split('T')[0];
     
+    console.log('Confirming reservation for spot:', data.spotId, 'in complex:', data.parkingComplex);
+    
     // Create the reservation in Supabase
     const newReservation = await addReservation({
       userId: data.userId || '',
@@ -108,8 +109,11 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
     });
     
     if (newReservation) {
+      console.log('Reservation created successfully:', newReservation.id);
+      
       // Update local state to reflect the change
       if (selectedComplex) {
+        console.log('Refreshing parking spots data after reservation');
         // Fetch the latest parking spots data
         const spots = await fetchParkingSpots(selectedComplex);
         setParkingSpots(spots);

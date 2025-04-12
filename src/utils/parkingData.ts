@@ -1,4 +1,3 @@
-
 import { SpotStatus } from '@/components/ParkingSpot';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,6 +36,8 @@ export const updateParkingSpotStatus = async (parkingComplex: string, spotId: st
   if (!parkingComplex || !spotId) return;
   
   try {
+    console.log(`Updating spot ${spotId} in ${parkingComplex} to ${newStatus}`);
+    
     // Update in database
     const { error } = await supabase
       .from('parking_spots')
@@ -53,7 +54,7 @@ export const updateParkingSpotStatus = async (parkingComplex: string, spotId: st
       }
     }
     
-    console.log(`Updated spot ${spotId} in ${parkingComplex} to ${newStatus}`);
+    console.log(`Successfully updated spot ${spotId} in ${parkingComplex} to ${newStatus}`);
   } catch (error) {
     console.error('Error updating parking spot status:', error);
     toast.error('Failed to update parking spot status');
@@ -133,6 +134,8 @@ export const getReservationsByUserId = async (userId: string): Promise<Reservati
 
 export const addReservation = async (reservation: Omit<ReservationData, 'id' | 'createdAt'>): Promise<ReservationData | null> => {
   try {
+    console.log('Adding reservation with data:', reservation);
+    
     // Insert the reservation into Supabase
     const { data, error } = await supabase
       .from('reservations')
@@ -151,6 +154,8 @@ export const addReservation = async (reservation: Omit<ReservationData, 'id' | '
     
     if (error) throw error;
     
+    console.log('Reservation added successfully. Now updating spot status...');
+    
     // Update the parking spot status to reserved
     await updateParkingSpotStatus(reservation.parkingComplex, reservation.spotId, 'reserved');
     
@@ -164,7 +169,7 @@ export const addReservation = async (reservation: Omit<ReservationData, 'id' | '
       date: data.date,
       time: data.time,
       duration: data.duration,
-      status: data.status as 'upcoming' | 'live' | 'past', // Fix: Add type assertion
+      status: data.status as 'upcoming' | 'live' | 'past',
       createdAt: data.created_at
     };
   } catch (error) {
