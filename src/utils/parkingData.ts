@@ -41,7 +41,7 @@ export const updateParkingSpotStatus = async (parkingComplex: string, spotId: st
   try {
     console.log(`Updating spot ${spotId} in ${parkingComplex} to ${newStatus}`);
     
-    // Update in database - fix the match condition to use exact column names
+    // Use proper column names that match the database schema
     const { data, error } = await supabase
       .from('parking_spots')
       .update({ status: newStatus })
@@ -143,6 +143,12 @@ export const getReservationsByUserId = async (userId: string): Promise<Reservati
 
 // Function to add a reservation and update spot status
 export const addReservation = async (reservation: Omit<ReservationData, 'id' | 'createdAt'>): Promise<ReservationData | null> => {
+  if (!reservation.spotId || reservation.spotId.trim() === '') {
+    console.error('Invalid spot ID in reservation data:', reservation);
+    toast.error('Invalid parking spot selected');
+    return null;
+  }
+
   try {
     console.log('Adding reservation with data:', reservation);
     
@@ -152,7 +158,7 @@ export const addReservation = async (reservation: Omit<ReservationData, 'id' | '
       .insert({
         user_id: reservation.userId,
         parking_complex: reservation.parkingComplex,
-        spot_id: reservation.spotId,
+        spot_id: reservation.spotId, // Make sure this matches the column name in the database
         vehicle_plate: reservation.vehiclePlate,
         date: reservation.date,
         time: reservation.time,

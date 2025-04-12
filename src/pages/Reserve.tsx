@@ -87,11 +87,19 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       return;
     }
     
+    console.log(`Selected spot: ${spotId} in complex: ${selectedComplex}`);
     setSelectedSpot(spotId);
     setIsReservationModalOpen(true);
   };
   
   const handleReservationConfirm = async (data: ReservationData) => {
+    // Validate spot ID
+    if (!data.spotId || data.spotId.trim() === '') {
+      toast.error('Invalid parking spot selected. Please try again.');
+      setIsReservationModalOpen(false);
+      return;
+    }
+    
     // Format the reservation data
     const formattedDate = data.date.toISOString().split('T')[0];
     
@@ -221,7 +229,7 @@ const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
       </div>
       
       {/* Reservation Modal */}
-      {selectedComplex && (
+      {selectedComplex && selectedSpot && (
         <ReservationModal 
           isOpen={isReservationModalOpen}
           onClose={() => setIsReservationModalOpen(false)}

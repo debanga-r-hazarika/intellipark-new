@@ -57,14 +57,22 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   const today = new Date();
   
   const [formData, setFormData] = useState<Partial<ReservationData>>({
-    spotId,
-    parkingComplex,
-    vehiclePlate,
+    spotId: spotId, // Ensure spotId is set from props
+    parkingComplex: parkingComplex,
+    vehiclePlate: vehiclePlate,
     date: today,
     time: '12:00 PM', // Default to noon
     duration: '1 hour',
     userId: ''
   });
+  
+  // Update formData when spotId prop changes
+  React.useEffect(() => {
+    if (spotId) {
+      setFormData(prev => ({ ...prev, spotId }));
+      console.log("ReservationModal updated spotId:", spotId);
+    }
+  }, [spotId]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +92,11 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       return;
     }
     
+    if (!spotId) {
+      toast.error('Invalid parking spot selected');
+      return;
+    }
+    
     try {
       // Get the current user from Supabase
       const { data: { user } } = await supabase.auth.getUser();
@@ -96,6 +109,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       // Add the user ID to the form data
       const completeData = {
         ...formData,
+        spotId: spotId, // Ensure spotId is set from props, not formData
         date: today, // Always use today's date
         userId: user.id
       } as ReservationData;
