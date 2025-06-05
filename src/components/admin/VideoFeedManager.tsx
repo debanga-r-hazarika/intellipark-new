@@ -12,13 +12,13 @@ type VideoFeed = Database['public']['Tables']['video_feeds']['Row'];
 type SpotDefinition = Database['public']['Tables']['spot_definitions']['Row'];
 
 interface SpotDefinitionInput {
-  id: string;
   x: number;
   y: number;
   width: number;
   height: number;
   spot_id: string;
   parking_complex: string;
+  video_feed_id: string;
 }
 
 const VideoFeedManager: React.FC = () => {
@@ -36,6 +36,12 @@ const VideoFeedManager: React.FC = () => {
     fetchVideoFeeds();
   }, []);
 
+  useEffect(() => {
+    if (selectedFeed) {
+      fetchSpotDefinitions(selectedFeed.id);
+    }
+  }, [selectedFeed]);
+
   const fetchVideoFeeds = async () => {
     try {
       const { data, error } = await supabase
@@ -49,6 +55,31 @@ const VideoFeedManager: React.FC = () => {
     }
   };
 
+  const fetchSpotDefinitions = async (videoFeedId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('spot_definitions')
+        .select('*')
+        .eq('video_feed_id', videoFeedId);
+
+      if (error) throw error;
+      
+      const mappedSpots = (data || []).map(spot => ({
+        x: Number(spot.x),
+        y: Number(spot.y),
+        width: Number(spot.width),
+        height: Number(spot.height),
+        spot_id: spot.spot_id,
+        parking_complex: spot.parking_complex,
+        video_feed_id: spot.video_feed_id || videoFeedId
+      }));
+      
+      setSpotDefinitions(mappedSpots);
+    } catch (error) {
+      console.error('Error fetching spot definitions:', error);
+    }
+  };
+
   const addVideoFeed = async () => {
     if (!newFeed.name || !newFeed.url || !newFeed.parking_complex) {
       toast.error('Please fill in all fields');
@@ -56,6 +87,9 @@ const VideoFeedManager: React.FC = () => {
     }
 
     try {
+      // First, create parking spots for this complex if they don't exist
+      await createParkingSpotsForComplex(newFeed.parking_complex);
+
       const { error } = await supabase
         .from('video_feeds')
         .insert([newFeed]);
@@ -68,6 +102,42 @@ const VideoFeedManager: React.FC = () => {
     } catch (error) {
       console.error('Error adding video feed:', error);
       toast.error('Failed to add video feed');
+    }
+  };
+
+  const createParkingSpotsForComplex = async (parkingComplex: string) => {
+    try {
+      // Check if parking spots already exist for this complex
+      const { data: existingSpots } = await supabase
+        .from('parking_spots')
+        .select('*')
+        .eq('parking_complex', parkingComplex);
+
+      if (existingSpots && existingSpots.length > 0) {
+        return; // Spots already exist
+      }
+
+      // Create some default parking spots (A1-A10, B1-B10)
+      const spots = [];
+      for (let row of ['A', 'B']) {
+        for (let i = 1; i <= 10; i++) {
+          spots.push({
+            spot_id: `${row}${i}`,
+            parking_complex: parkingComplex,
+            status: 'available'
+          });
+        }
+      }
+
+      const { error } = await supabase
+        .from('parking_spots')
+        .insert(spots);
+
+      if (error) throw error;
+      toast.success(`Created ${spots.length} parking spots for ${parkingComplex}`);
+    } catch (error) {
+      console.error('Error creating parking spots:', error);
+      toast.error('Failed to create parking spots');
     }
   };
 
@@ -96,13 +166,13 @@ const VideoFeedManager: React.FC = () => {
     const y = ((event.clientY - rect.top) / rect.height) * 100;
 
     const newSpot: SpotDefinitionInput = {
-      id: Date.now().toString(),
       x,
       y,
       width: 8, // Default width as percentage
       height: 12, // Default height as percentage
       spot_id: currentSpotId,
-      parking_complex: selectedFeed.parking_complex
+      parking_complex: selectedFeed.parking_complex,
+      video_feed_id: selectedFeed.id
     };
 
     setSpotDefinitions(prev => [...prev, newSpot]);
@@ -132,21 +202,32 @@ const VideoFeedManager: React.FC = () => {
   };
 
   const saveSpotDefinitions = async () => {
-    if (!selectedFeed) return;
+    if (!selectedFeed || spotDefinitions.length === 0) {
+      toast.error('No spot definitions to save');
+      return;
+    }
 
     try {
+      // Delete existing definitions for this video feed
+      await supabase
+        .from('spot_definitions')
+        .delete()
+        .eq('video_feed_id', selectedFeed.id);
+
+      // Insert new definitions
+      const definitionsToInsert = spotDefinitions.map(spot => ({
+        video_feed_id: selectedFeed.id,
+        x: spot.x,
+        y: spot.y,
+        width: spot.width,
+        height: spot.height,
+        spot_id: spot.spot_id,
+        parking_complex: spot.parking_complex
+      }));
+
       const { error } = await supabase
         .from('spot_definitions')
-        .upsert(spotDefinitions.map(spot => ({
-          id: spot.id,
-          video_feed_id: selectedFeed.id,
-          x: spot.x,
-          y: spot.y,
-          width: spot.width,
-          height: spot.height,
-          spot_id: spot.spot_id,
-          parking_complex: spot.parking_complex
-        })));
+        .insert(definitionsToInsert);
 
       if (error) throw error;
       toast.success('Spot definitions saved successfully');
@@ -156,12 +237,16 @@ const VideoFeedManager: React.FC = () => {
     }
   };
 
+  const removeSpotDefinition = (index: number) => {
+    setSpotDefinitions(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="space-y-6">
       {/* Add New Video Feed */}
       <Card>
         <CardHeader>
-          <CardTitle>Add Video Feed</CardTitle>
+          <CardTitle>Add Video Feed & Create Parking Complex</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -176,12 +261,15 @@ const VideoFeedManager: React.FC = () => {
               onChange={(e) => setNewFeed({ ...newFeed, url: e.target.value })}
             />
             <Input
-              placeholder="Parking Complex"
+              placeholder="Parking Complex Name"
               value={newFeed.parking_complex}
               onChange={(e) => setNewFeed({ ...newFeed, parking_complex: e.target.value })}
             />
-            <Button onClick={addVideoFeed}>Add Feed</Button>
+            <Button onClick={addVideoFeed}>Add Feed & Create Complex</Button>
           </div>
+          <p className="text-sm text-gray-600 mt-2">
+            This will create a new parking complex with default spots (A1-A10, B1-B10) and add the video feed.
+          </p>
         </CardContent>
       </Card>
 
@@ -241,7 +329,7 @@ const VideoFeedManager: React.FC = () => {
                   Define Spot
                 </Button>
                 <Button onClick={saveSpotDefinitions} variant="outline">
-                  Save Definitions
+                  Save Definitions ({spotDefinitions.length})
                 </Button>
               </div>
               
@@ -287,9 +375,9 @@ const VideoFeedManager: React.FC = () => {
                 )}
                 
                 {/* Spot markers */}
-                {spotDefinitions.map((spot) => (
+                {spotDefinitions.map((spot, index) => (
                   <div
-                    key={spot.id}
+                    key={index}
                     className="absolute border-2 border-red-500 bg-red-500 bg-opacity-20 pointer-events-none"
                     style={{
                       left: `${spot.x}%`,
@@ -308,12 +396,20 @@ const VideoFeedManager: React.FC = () => {
               {/* Defined Spots List */}
               {spotDefinitions.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-2">Defined Spots:</h4>
+                  <h4 className="font-medium mb-2">Defined Spots ({spotDefinitions.length}):</h4>
                   <div className="flex flex-wrap gap-2">
-                    {spotDefinitions.map((spot) => (
-                      <Badge key={spot.id} variant="outline">
-                        {spot.spot_id}
-                      </Badge>
+                    {spotDefinitions.map((spot, index) => (
+                      <div key={index} className="flex items-center gap-1">
+                        <Badge variant="outline">{spot.spot_id}</Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeSpotDefinition(index)}
+                          className="text-red-500 hover:text-red-700 p-1 h-6 w-6"
+                        >
+                          ×
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>
