@@ -105,6 +105,83 @@ export type Database = {
         }
         Relationships: []
       }
+      spot_definitions: {
+        Row: {
+          created_at: string
+          height: number
+          id: string
+          parking_complex: string
+          spot_id: string
+          updated_at: string
+          video_feed_id: string | null
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          height: number
+          id?: string
+          parking_complex: string
+          spot_id: string
+          updated_at?: string
+          video_feed_id?: string | null
+          width: number
+          x: number
+          y: number
+        }
+        Update: {
+          created_at?: string
+          height?: number
+          id?: string
+          parking_complex?: string
+          spot_id?: string
+          updated_at?: string
+          video_feed_id?: string | null
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spot_definitions_video_feed_id_fkey"
+            columns: ["video_feed_id"]
+            isOneToOne: false
+            referencedRelation: "video_feeds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_feeds: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parking_complex: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parking_complex: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parking_complex?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

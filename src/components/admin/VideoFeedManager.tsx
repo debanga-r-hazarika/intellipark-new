@@ -6,8 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Database } from '@/integrations/supabase/types';
 
-interface SpotDefinition {
+type VideoFeed = Database['public']['Tables']['video_feeds']['Row'];
+type SpotDefinition = Database['public']['Tables']['spot_definitions']['Row'];
+
+interface SpotDefinitionInput {
   id: string;
   x: number;
   y: number;
@@ -17,17 +21,9 @@ interface SpotDefinition {
   parking_complex: string;
 }
 
-interface VideoFeed {
-  id: string;
-  name: string;
-  url: string;
-  parking_complex: string;
-  is_active: boolean;
-}
-
 const VideoFeedManager: React.FC = () => {
   const [videoFeeds, setVideoFeeds] = useState<VideoFeed[]>([]);
-  const [spotDefinitions, setSpotDefinitions] = useState<SpotDefinition[]>([]);
+  const [spotDefinitions, setSpotDefinitions] = useState<SpotDefinitionInput[]>([]);
   const [selectedFeed, setSelectedFeed] = useState<VideoFeed | null>(null);
   const [newFeed, setNewFeed] = useState({ name: '', url: '', parking_complex: '' });
   const [isDefiningSpots, setIsDefiningSpots] = useState(false);
@@ -81,7 +77,7 @@ const VideoFeedManager: React.FC = () => {
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
 
-    const newSpot: SpotDefinition = {
+    const newSpot: SpotDefinitionInput = {
       id: Date.now().toString(),
       x,
       y,
