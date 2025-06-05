@@ -26,7 +26,7 @@ interface UseProfileResult {
 
 export const useProfile = (
   isLoggedIn: boolean, 
-  setIsLoggedIn: (value: boolean) => void,
+  onLogout: () => void,
   navigate: (path: string) => void
 ): UseProfileResult => {
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -92,7 +92,7 @@ export const useProfile = (
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      setIsLoggedIn(false);
+      onLogout();
       toast.success('Successfully logged out!');
       navigate('/');
     } catch (error) {
