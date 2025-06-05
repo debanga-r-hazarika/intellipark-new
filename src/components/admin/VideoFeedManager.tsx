@@ -29,6 +29,7 @@ const VideoFeedManager: React.FC = () => {
   const [isDefiningSpots, setIsDefiningSpots] = useState(false);
   const [currentSpotId, setCurrentSpotId] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -70,7 +71,24 @@ const VideoFeedManager: React.FC = () => {
     }
   };
 
-  const handleVideoClick = (event: React.MouseEvent<HTMLVideoElement>) => {
+  const convertToEmbedUrl = (url: string) => {
+    // Convert YouTube URLs to embed format
+    if (url.includes('youtube.com/watch')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  };
+
+  const isYouTubeUrl = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
+  const handleVideoClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isDefiningSpots || !currentSpotId || !selectedFeed) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -236,23 +254,37 @@ const VideoFeedManager: React.FC = () => {
               )}
 
               <div className="relative">
-                <video
-                  ref={videoRef}
-                  src={selectedFeed.url}
-                  controls
-                  className="w-full max-w-2xl cursor-crosshair"
-                  onClick={handleVideoClick}
-                />
-                
-                {/* Overlay spot definitions */}
-                <canvas
-                  ref={canvasRef}
-                  className="absolute top-0 left-0 pointer-events-none"
-                  style={{
-                    width: videoRef.current?.offsetWidth || 0,
-                    height: videoRef.current?.offsetHeight || 0
-                  }}
-                />
+                {isYouTubeUrl(selectedFeed.url) ? (
+                  <div 
+                    className={`relative w-full max-w-2xl ${isDefiningSpots ? 'cursor-crosshair' : ''}`}
+                    onClick={handleVideoClick}
+                  >
+                    <iframe
+                      ref={iframeRef}
+                      src={convertToEmbedUrl(selectedFeed.url)}
+                      className="w-full aspect-video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    
+                    {/* Overlay for click detection */}
+                    {isDefiningSpots && (
+                      <div className="absolute inset-0 bg-transparent z-10" />
+                    )}
+                  </div>
+                ) : (
+                  <div 
+                    className={`relative ${isDefiningSpots ? 'cursor-crosshair' : ''}`}
+                    onClick={handleVideoClick}
+                  >
+                    <video
+                      ref={videoRef}
+                      src={selectedFeed.url}
+                      controls
+                      className="w-full max-w-2xl"
+                    />
+                  </div>
+                )}
                 
                 {/* Spot markers */}
                 {spotDefinitions.map((spot) => (
