@@ -2,16 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import UserProfileForm from '@/components/profile/UserProfileForm';
 import ReservationTabs from '@/components/profile/ReservationTabs';
 import useProfile from '@/hooks/useProfile';
 
-interface ProfileProps {
-  isLoggedIn: boolean;
-  setIsLoggedIn: (value: boolean) => void;
-}
-
-const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
+const Profile: React.FC = () => {
+  const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
   
   const {
@@ -21,7 +18,7 @@ const Profile: React.FC<ProfileProps> = ({ isLoggedIn, setIsLoggedIn }) => {
     pastReservations,
     isLoading,
     handleLogout
-  } = useProfile(isLoggedIn, setIsLoggedIn, navigate);
+  } = useProfile(isLoggedIn, () => {}, navigate);
   
   if (!isLoggedIn) return null; // Don't render if not logged in
   

@@ -6,13 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
-interface LoginProps {
-  setIsLoggedIn: (value: boolean) => void;
-}
-
-const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
+const Login: React.FC = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,10 +27,7 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await login(email, password);
       
       if (error) {
         toast.error(error.message || 'Error logging in');
@@ -41,11 +35,8 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
         return;
       }
       
-      if (data.user) {
-        setIsLoggedIn(true);
-        toast.success('Login successful!');
-        navigate('/');
-      }
+      toast.success('Login successful!');
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       toast.error('An unexpected error occurred');

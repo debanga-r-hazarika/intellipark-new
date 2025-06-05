@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParkingGrid from '@/components/ParkingGrid';
@@ -6,6 +5,7 @@ import ReservationModal, { ReservationData } from '@/components/ReservationModal
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   parkingComplexes, 
   fetchParkingSpots,
@@ -14,7 +14,8 @@ import {
 } from '@/utils/parkingData';
 import { supabase } from '@/integrations/supabase/client';
 
-const Reserve: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
+const Reserve: React.FC = () => {
+  const { isLoggedIn } = useAuth();
   const [selectedComplex, setSelectedComplex] = useState<string | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<string | null>(null);
   const [isReservationModalOpen, setIsReservationModalOpen] = useState<boolean>(false);
