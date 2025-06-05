@@ -7,6 +7,7 @@ import ParkingComplexManager from '@/components/admin/ParkingComplexManager';
 import ParkingSpotManager from '@/components/admin/ParkingSpotManager';
 import ReservationManager from '@/components/admin/ReservationManager';
 import AdminDashboard from '@/components/admin/AdminDashboard';
+import VideoFeedManager from '@/components/admin/VideoFeedManager';
 
 const Admin: React.FC = () => {
   const { isLoggedIn } = useAuth();
@@ -31,11 +32,12 @@ const Admin: React.FC = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
         
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="complexes">Parking Complexes</TabsTrigger>
             <TabsTrigger value="spots">Parking Spots</TabsTrigger>
             <TabsTrigger value="reservations">Reservations</TabsTrigger>
+            <TabsTrigger value="video-feeds">Computer Vision</TabsTrigger>
           </TabsList>
           
           <TabsContent value="dashboard">
@@ -71,6 +73,17 @@ const Admin: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ReservationManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="video-feeds">
+            <Card>
+              <CardHeader>
+                <CardTitle>Computer Vision - Parking Monitoring</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VideoFeedManager />
               </CardContent>
             </Card>
           </TabsContent>

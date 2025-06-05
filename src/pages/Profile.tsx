@@ -8,7 +8,7 @@ import ReservationTabs from '@/components/profile/ReservationTabs';
 import useProfile from '@/hooks/useProfile';
 
 const Profile: React.FC = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
   
   const {
@@ -18,7 +18,7 @@ const Profile: React.FC = () => {
     pastReservations,
     isLoading,
     handleLogout
-  } = useProfile(isLoggedIn, () => {}, navigate);
+  } = useProfile(isLoggedIn, logout, navigate);
   
   if (!isLoggedIn) return null; // Don't render if not logged in
   
