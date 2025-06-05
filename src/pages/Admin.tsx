@@ -2,12 +2,29 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
 import ParkingComplexManager from '@/components/admin/ParkingComplexManager';
 import ParkingSpotManager from '@/components/admin/ParkingSpotManager';
 import ReservationManager from '@/components/admin/ReservationManager';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 
 const Admin: React.FC = () => {
+  const { isLoggedIn } = useAuth();
+  
+  // You might want to add admin role checking here in the future
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 pt-24 px-4 pb-16">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+            <p>Please log in to access the admin panel.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 pt-24 px-4 pb-16">
       <div className="container mx-auto max-w-7xl">
