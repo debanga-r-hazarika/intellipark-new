@@ -28,28 +28,25 @@ const AdminDashboard: React.FC = () => {
     const fetchStats = async () => {
       try {
         // Get parking complexes count
-        const { data: complexes } = await supabase
-          .from('parking_spots')
-          .select('parking_complex')
-          .distinct();
-        
-        // Get parking spots stats
         const { data: spots } = await supabase
           .from('parking_spots')
-          .select('status');
+          .select('parking_complex, status');
         
         // Get reservations stats
         const { data: reservations } = await supabase
           .from('reservations')
           .select('status');
 
+        // Calculate unique complexes
+        const uniqueComplexes = new Set(spots?.map(spot => spot.parking_complex) || []);
+        
         const availableSpots = spots?.filter(spot => spot.status === 'available').length || 0;
         const reservedSpots = spots?.filter(spot => spot.status === 'reserved').length || 0;
         const occupiedSpots = spots?.filter(spot => spot.status === 'occupied').length || 0;
         const activeReservations = reservations?.filter(res => res.status === 'upcoming' || res.status === 'live').length || 0;
 
         setStats({
-          totalComplexes: complexes?.length || 0,
+          totalComplexes: uniqueComplexes.size,
           totalSpots: spots?.length || 0,
           availableSpots,
           reservedSpots,

@@ -1,60 +1,65 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { toast } from 'sonner';
+
+type ReservationStatus = 'upcoming' | 'live' | 'past';
 
 interface ReservationData {
   id: string;
   user_id: string;
-  parking_complex: string;
   spot_id: string;
-  vehicle_plate: string;
+  parking_complex: string;
   date: string;
   time: string;
   duration: string;
-  status: 'upcoming' | 'live' | 'past';
+  vehicle_plate: string;
+  status: ReservationStatus;
   created_at: string;
+  updated_at: string;
 }
 
 const ReservationManager: React.FC = () => {
   const [reservations, setReservations] = useState<ReservationData[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  useEffect(() => {
+    fetchReservations();
+  }, []);
 
   const fetchReservations = async () => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('reservations')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (statusFilter) {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
 
-      setReservations(data || []);
+      if (data) {
+        // Type assertion to ensure the data matches our interface
+        const typedData = data.map(reservation => ({
+          ...reservation,
+          status: reservation.status as ReservationStatus
+        }));
+        setReservations(typedData);
+      }
     } catch (error) {
       console.error('Error fetching reservations:', error);
-      toast.error('Failed to load reservations');
+      toast.error('Failed to fetch reservations');
     }
   };
 
-  useEffect(() => {
-    fetchReservations();
-  }, [statusFilter]);
-
-  const updateReservationStatus = async (id: string, newStatus: 'upcoming' | 'live' | 'past') => {
+  const handleUpdateReservationStatus = async (reservationId: string, newStatus: ReservationStatus) => {
     try {
       const { error } = await supabase
         .from('reservations')
         .update({ status: newStatus })
-        .eq('id', id);
+        .eq('id', reservationId);
 
       if (error) throw error;
 
@@ -66,28 +71,14 @@ const ReservationManager: React.FC = () => {
     }
   };
 
-  const cancelReservation = async (id: string, spotId: string, parkingComplex: string) => {
-    if (!confirm('Are you sure you want to cancel this reservation?')) {
-      return;
-    }
-
+  const handleCancelReservation = async (reservationId: string) => {
     try {
-      // Delete the reservation
-      const { error: deleteError } = await supabase
+      const { error } = await supabase
         .from('reservations')
         .delete()
-        .eq('id', id);
+        .eq('id', reservationId);
 
-      if (deleteError) throw deleteError;
-
-      // Update spot status to available
-      const { error: updateError } = await supabase
-        .from('parking_spots')
-        .update({ status: 'available' })
-        .eq('spot_id', spotId)
-        .eq('parking_complex', parkingComplex);
-
-      if (updateError) throw updateError;
+      if (error) throw error;
 
       toast.success('Reservation cancelled successfully');
       fetchReservations();
@@ -97,25 +88,30 @@ const ReservationManager: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const filteredReservations = filterStatus === 'all' 
+    ? reservations 
+    : reservations.filter(reservation => reservation.status === filterStatus);
+
+  const getStatusColor = (status: ReservationStatus) => {
     switch (status) {
-      case 'upcoming': return 'text-blue-600 bg-blue-100';
-      case 'live': return 'text-green-600 bg-green-100';
-      case 'past': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'upcoming': return 'bg-blue-500';
+      case 'live': return 'bg-green-500';
+      case 'past': return 'bg-gray-500';
+      default: return 'bg-gray-500';
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Reservations</h3>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+      {/* Filter */}
+      <div className="flex gap-4 items-center">
+        <label>Filter by Status:</label>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="upcoming">Upcoming</SelectItem>
             <SelectItem value="live">Live</SelectItem>
             <SelectItem value="past">Past</SelectItem>
@@ -123,41 +119,33 @@ const ReservationManager: React.FC = () => {
         </Select>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Complex</TableHead>
-            <TableHead>Spot</TableHead>
-            <TableHead>Vehicle Plate</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Time</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {reservations.map((reservation) => (
-            <TableRow key={reservation.id}>
-              <TableCell>{reservation.parking_complex}</TableCell>
-              <TableCell className="font-medium">{reservation.spot_id}</TableCell>
-              <TableCell>{reservation.vehicle_plate}</TableCell>
-              <TableCell>{format(new Date(reservation.date), 'MMM dd, yyyy')}</TableCell>
-              <TableCell>{reservation.time}</TableCell>
-              <TableCell>{reservation.duration}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(reservation.status)}`}>
+      {/* Reservations List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredReservations.map((reservation) => (
+          <Card key={reservation.id}>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">Spot {reservation.spot_id}</CardTitle>
+                <Badge className={getStatusColor(reservation.status)}>
                   {reservation.status}
-                </span>
-              </TableCell>
-              <TableCell>{format(new Date(reservation.created_at), 'MMM dd, yyyy')}</TableCell>
-              <TableCell className="space-x-2">
-                <Select
-                  value={reservation.status}
-                  onValueChange={(value) => updateReservationStatus(reservation.id, value as 'upcoming' | 'live' | 'past')}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <p><strong>Complex:</strong> {reservation.parking_complex}</p>
+                <p><strong>Date:</strong> {reservation.date}</p>
+                <p><strong>Time:</strong> {reservation.time}</p>
+                <p><strong>Duration:</strong> {reservation.duration}</p>
+                <p><strong>Vehicle:</strong> {reservation.vehicle_plate}</p>
+                <p><strong>User ID:</strong> {reservation.user_id.substring(0, 8)}...</p>
+              </div>
+              <div className="space-y-2 mt-4">
+                <Select 
+                  value={reservation.status} 
+                  onValueChange={(value: ReservationStatus) => handleUpdateReservationStatus(reservation.id, value)}
                 >
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,15 +157,16 @@ const ReservationManager: React.FC = () => {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => cancelReservation(reservation.id, reservation.spot_id, reservation.parking_complex)}
+                  onClick={() => handleCancelReservation(reservation.id)}
+                  className="w-full"
                 >
-                  Cancel
+                  Cancel Reservation
                 </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
